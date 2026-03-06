@@ -14,7 +14,10 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = (userData) => setUser(userData);
+  const login = (userData, token) => {
+    if (token) localStorage.setItem('token', token);
+    setUser(userData);
+  };
 
   const logout = async () => {
     try {
@@ -23,6 +26,7 @@ export function AuthProvider({ children }) {
       // cookie cleared server-side; ignore errors
     }
     setUser(null);
+    localStorage.removeItem('token');
     localStorage.removeItem('theme');
   };
 
