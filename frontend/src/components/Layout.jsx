@@ -157,7 +157,7 @@ export default function Layout() {
   const handleSignOut = async () => {
     setDropdownOpen(false);
     await logout();
-    navigate('/login', { replace: true });
+    window.location.replace('/login');
   };
 
   const handleSettings = () => {

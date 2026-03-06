@@ -23,6 +23,7 @@ export function AuthProvider({ children }) {
       // cookie cleared server-side; ignore errors
     }
     setUser(null);
+    localStorage.removeItem('theme');
   };
 
   const refreshUser = async () => {
