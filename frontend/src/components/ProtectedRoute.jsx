@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 dark:bg-slate-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <svg
             className="w-12 h-12 text-indigo-500 animate-spin"
@@ -28,7 +28,7 @@ export default function ProtectedRoute({ children }) {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
             />
           </svg>
-          <span className="text-slate-400 text-sm font-medium">Loading…</span>
+          <span className="text-gray-500 dark:text-slate-400 text-sm font-medium">Loading…</span>
         </div>
       </div>
     );
