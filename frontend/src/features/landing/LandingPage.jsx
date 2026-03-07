@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { googleSignIn } from '../../services/auth.service';
@@ -9,78 +9,34 @@ import PhoneInput from '../../components/ui/PhoneInput';
 
 /* ── Mock pill data ─────────────────────────────────────────────────── */
 const MOCK_PILLS = [
-  {
-    name: 'Birth Control',
-    color: '#ec4899',
-    hours: ['08:00'],
-    takenHours: ['08:00'],
-    nextHour: null,
-  },
-  {
-    name: 'Vitamin D',
-    color: '#22c55e',
-    hours: ['09:00', '21:00'],
-    takenHours: ['09:00'],
-    nextHour: '21:00',
-  },
-  {
-    name: 'Omega-3',
-    color: '#f97316',
-    hours: ['20:00'],
-    takenHours: [],
-    nextHour: '20:00',
-  },
+  { name: 'Birth Control', color: '#ec4899', hours: ['08:00'], takenHours: ['08:00'], nextHour: null },
+  { name: 'Vitamin D',     color: '#22c55e', hours: ['09:00', '21:00'], takenHours: ['09:00'], nextHour: '21:00' },
+  { name: 'Omega-3',       color: '#f97316', hours: ['20:00'], takenHours: [], nextHour: '20:00' },
 ];
 
-/* ── Mini bar chart (adherence preview) ─────────────────────────────── */
 const BAR_DATA = [
   { day: 'M', h: 72 }, { day: 'T', h: 85 }, { day: 'W', h: 60 },
   { day: 'T', h: 90 }, { day: 'F', h: 78 }, { day: 'S', h: 55 }, { day: 'S', h: 88 },
 ];
-// 14-day heatmap — 1 = taken, 0 = missed
-const HEATMAP = [1,1,1,0,1,1,1,1,1,0,1,1,1,1];
 
-/* ── Features ───────────────────────────────────────────────────────── */
 const FEATURES = [
-  {
-    emoji: '📅',
-    title: 'Flexible schedules',
-    desc: 'Daily, every N days, specific weekdays, or once a month — whatever fits your routine.',
-    preview: 'schedule',
-  },
-  {
-    emoji: '✉️',
-    title: 'Email reminders',
-    desc: 'Reminders arrive on schedule and keep repeating until you log the dose.',
-    preview: 'email',
-  },
-  {
-    emoji: '📊',
-    title: 'History & charts',
-    desc: 'Adherence rate, streaks, and a bar chart comparing scheduled vs. actual times.',
-    preview: 'chart',
-  },
-  {
-    emoji: '💊',
-    title: 'All your medications',
-    desc: 'Manage every pill in one dashboard with a live timeline of today\'s doses.',
-    preview: 'timeline',
-  },
+  { emoji: '📅', title: 'Flexible schedules',    desc: 'Daily, every N days, specific weekdays, or once a month — whatever fits your routine.', preview: 'schedule' },
+  { emoji: '✉️', title: 'Email reminders',       desc: 'Reminders arrive on schedule and keep repeating until you log the dose.',              preview: 'email'    },
+  { emoji: '📊', title: 'History & charts',      desc: 'Adherence rate, streaks, and a bar chart comparing scheduled vs. actual times.',        preview: 'chart'    },
+  { emoji: '💊', title: 'All your medications',  desc: "Manage every pill in one dashboard with a live timeline of today's doses.",             preview: 'timeline' },
 ];
 
 const STEPS = [
-  { n: 1, title: 'Add your pills', desc: 'Name, color, and how often — takes under 30 seconds.' },
-  { n: 2, title: 'Set reminder times', desc: 'Pick the times you want reminders and how often to repeat them.' },
-  { n: 3, title: 'Get notified', desc: 'Email reminders arrive on schedule and stop once you log the dose.' },
+  { n: 1, icon: '💊', title: 'Add your pills',       desc: 'Name, color, and how often — takes under 30 seconds.' },
+  { n: 2, icon: '⏰', title: 'Set reminder times',   desc: 'Pick your dose times and how often to re-send if you forget.' },
+  { n: 3, icon: '✉️', title: 'Get notified',         desc: 'Email reminders arrive on schedule and stop once you log the dose.' },
 ];
 
 /* ── Google sign-in button ───────────────────────────────────────────── */
 function GoogleSignInButton({ onCredential, loading, width = 300 }) {
   const initialized = useRef(false);
-
   const divRef = (node) => {
     if (!node || loading) return;
-
     const render = () => {
       if (!window.google) return;
       if (!initialized.current) {
@@ -91,28 +47,20 @@ function GoogleSignInButton({ onCredential, loading, width = 300 }) {
         initialized.current = true;
       }
       window.google.accounts.id.renderButton(node, {
-        theme: 'filled_black',
-        size: 'large',
-        width,
-        text: 'continue_with',
-        shape: 'rectangular',
+        theme: 'filled_black', size: 'large', width, text: 'continue_with', shape: 'rectangular',
       });
     };
-
     if (window.google) {
       render();
     } else if (!document.querySelector('script[src*="accounts.google.com/gsi"]')) {
       const s = document.createElement('script');
       s.src = 'https://accounts.google.com/gsi/client';
-      s.async = true;
-      s.defer = true;
-      s.onload = render;
+      s.async = true; s.defer = true; s.onload = render;
       document.head.appendChild(s);
     } else {
       const id = setInterval(() => { if (window.google) { clearInterval(id); render(); } }, 100);
     }
   };
-
   return <div ref={divRef} style={{ minHeight: 44 }} />;
 }
 
@@ -129,25 +77,22 @@ function PillIcon({ color = '#6366f1', size = 24 }) {
   );
 }
 
-/* ── Static mock pill card ───────────────────────────────────────────── */
+/* ── Mock pill card — muted to signal "not interactive" ──────────────── */
 function MockPillCard({ pill }) {
   const allTaken = pill.takenHours.length === pill.hours.length;
   return (
-    <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/60 rounded-xl p-4 flex flex-col gap-3 select-none">
+    <div className="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700/40 rounded-xl p-3.5 flex flex-col gap-2">
       <div className="flex items-start justify-between gap-2">
         <span className="font-semibold text-sm text-gray-900 dark:text-slate-100">{pill.name}</span>
-        <PillIcon color={pill.color} size={22} />
+        <PillIcon color={pill.color} size={20} />
       </div>
       <div className="flex flex-wrap gap-1.5">
         {pill.hours.map((h) => (
-          <span
-            key={h}
-            className={`text-xs px-2 py-0.5 rounded-full ${
-              pill.takenHours.includes(h)
-                ? 'bg-green-500/20 text-green-500 dark:text-green-400'
-                : 'bg-indigo-600/15 text-indigo-600 dark:text-indigo-300'
-            }`}
-          >
+          <span key={h} className={`text-xs px-2 py-0.5 rounded-full ${
+            pill.takenHours.includes(h)
+              ? 'bg-green-500/20 text-green-500 dark:text-green-400'
+              : 'bg-indigo-600/15 text-indigo-600 dark:text-indigo-300'
+          }`}>
             {pill.takenHours.includes(h) ? '✓ ' : ''}{h}
           </span>
         ))}
@@ -155,65 +100,88 @@ function MockPillCard({ pill }) {
       <div className="flex items-center gap-1.5 text-xs">
         {allTaken ? (
           <>
-            <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span className="text-green-400 font-medium">All doses taken</span>
           </>
         ) : (
           <>
-            <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span className="text-gray-400 dark:text-slate-400">Next: {pill.nextHour}</span>
           </>
         )}
       </div>
-      <div className="mt-auto">
+      {/* Deliberately muted / ghost buttons so they don't look clickable */}
+      <div className="mt-0.5">
         {allTaken
-          ? <button className="btn-secondary text-xs py-1.5 px-3 pointer-events-none" tabIndex={-1}>Undo</button>
-          : <button className="btn-primary w-full text-xs py-1.5 pointer-events-none" tabIndex={-1}>Mark as Taken</button>
+          ? <div className="text-center text-xs py-1.5 px-3 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-300 dark:text-slate-600 cursor-default select-none">Undo</div>
+          : <div className="text-center text-xs py-1.5 rounded-lg bg-indigo-400/40 dark:bg-indigo-700/40 text-indigo-200 dark:text-indigo-400 cursor-default select-none">Mark as Taken</div>
         }
       </div>
     </div>
   );
 }
 
-/* ── App preview (browser frame) ────────────────────────────────────── */
+/* ── App preview ─────────────────────────────────────────────────────── */
 function AppPreview() {
   return (
     <div className="relative w-full max-w-sm mx-auto lg:mx-0">
-      <div className="absolute -inset-4 bg-gradient-to-br from-indigo-500/20 to-purple-500/10 rounded-3xl blur-2xl pointer-events-none" />
-      <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200/80 dark:border-slate-700/60">
-        {/* Title bar */}
-        <div className="flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700/60">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-          <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-          <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-          <div className="ml-3 flex-1 bg-gray-100 dark:bg-slate-800 rounded-md px-3 py-0.5 text-xs text-gray-400 dark:text-slate-500 text-center">
-            pillreminder.app
-          </div>
+      {/* Ambient glow */}
+      <div className="absolute -inset-8 bg-gradient-to-br from-indigo-500/20 to-violet-500/10 rounded-[40px] blur-3xl pointer-events-none" />
+
+      {/* 3D perspective tilt — visually signals "screenshot / promotional asset" */}
+      <div
+        className="relative pointer-events-none select-none"
+        style={{
+          transform: 'perspective(1100px) rotateY(-9deg) rotateX(3deg)',
+          transformOrigin: 'left center',
+          filter: 'drop-shadow(0 32px 48px rgba(0,0,0,0.35))',
+        }}
+      >
+        {/* "PREVIEW" badge — top-right corner of the frame */}
+        <div className="absolute -top-3 right-4 z-20 bg-amber-400 text-amber-900 text-[9px] font-black px-2.5 py-1 rounded-full tracking-widest uppercase shadow-lg">
+          Preview
         </div>
-        {/* Content */}
-        <div className="bg-gray-100 dark:bg-slate-950 p-4 space-y-3">
-          <div className="flex items-center justify-between mb-1">
-            <div>
-              <div className="text-sm font-bold text-gray-900 dark:text-slate-100">My Pills</div>
-              <div className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Today, Friday 7 March</div>
+
+        <div className="rounded-2xl overflow-hidden border border-white/10 dark:border-slate-700/50">
+          {/* Titlebar */}
+          <div className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700/60">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
+            <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
+            <div className="ml-3 flex-1 bg-gray-100 dark:bg-slate-800 rounded-md px-3 py-0.5 text-xs text-gray-400 dark:text-slate-500 text-center">
+              pillreminder.app
             </div>
-            <div className="bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">+ Add Pill</div>
           </div>
-          {MOCK_PILLS.map((p) => (
-            <MockPillCard key={p.name} pill={p} />
-          ))}
+          {/* App content */}
+          <div className="bg-gray-50 dark:bg-[#0d1117] p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between mb-1">
+              <div>
+                <div className="text-sm font-bold text-gray-900 dark:text-slate-100">My Pills</div>
+                <div className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Today, Friday 7 March</div>
+              </div>
+              <div className="bg-indigo-600/60 text-white/80 text-xs font-semibold px-2.5 py-1.5 rounded-lg cursor-default select-none">
+                + Add Pill
+              </div>
+            </div>
+            {MOCK_PILLS.map((p) => <MockPillCard key={p.name} pill={p} />)}
+          </div>
         </div>
       </div>
+
+      {/* Caption — reinforces it's not interactive */}
+      <p className="text-center text-xs text-slate-400 dark:text-slate-600 mt-5 italic">
+        App preview — sign in to use the real thing
+      </p>
     </div>
   );
 }
 
-/* ── Mini bar chart preview ──────────────────────────────────────────── */
-const BAR_H = 56; // px — container height for the bars
+/* ── Mini bar chart ──────────────────────────────────────────────────── */
+const BAR_H = 56;
 function MiniBarChart() {
   const max = Math.max(...BAR_DATA.map((d) => d.h));
   return (
@@ -238,45 +206,38 @@ function MiniBarChart() {
   );
 }
 
-/* ── Email preview (mirrors real email template) ─────────────────────── */
+/* ── Email preview ───────────────────────────────────────────────────── */
 function MiniEmailPreview() {
   return (
     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50">
-      {/* Force light background — emails always render light */}
       <div className="bg-[#f9fafb] rounded-xl p-3 text-xs" style={{ fontFamily: 'sans-serif' }}>
         <div className="bg-white rounded-lg p-4 border border-[#e5e7eb] space-y-2.5">
-          {/* Header */}
           <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
             <span className="text-xl leading-none">💊</span>
             <span className="font-semibold text-[#4f46e5] text-sm">Pill Reminder</span>
           </div>
-          {/* Body */}
           <p className="text-[#111827]">Hi <strong>Sarah</strong>,</p>
           <p className="text-[#374151]">
             This is a reminder to take your{' '}
             <strong className="text-[#4f46e5]">Vitamin D</strong>.
           </p>
-          {/* Scheduled times box */}
           <div className="bg-[#f3f4f6] rounded-lg px-3 py-2">
             <p className="text-[#6b7280] text-[10px] uppercase font-semibold tracking-wide">Scheduled times</p>
             <p className="text-[#111827] font-medium mt-0.5">09:00</p>
           </div>
-          {/* CTA button */}
-          <div>
-            <span className="inline-block bg-[#4f46e5] text-white px-4 py-1.5 rounded-lg font-semibold text-[11px]">
-              Open Pill Reminder →
-            </span>
-          </div>
+          <span className="inline-block bg-[#4f46e5] text-white px-4 py-1.5 rounded-lg font-semibold text-[11px]">
+            Open Pill Reminder →
+          </span>
         </div>
       </div>
     </div>
   );
 }
 
-/* ── Schedule preview (all 4 schedule types) ─────────────────────────── */
+/* ── Schedule preview ────────────────────────────────────────────────── */
 function MiniSchedulePreview() {
   const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  const selected = [1, 3, 5]; // Mon, Wed, Fri
+  const selected = [1, 3, 5];
 
   function Radio({ active, label, children }) {
     return (
@@ -295,24 +256,17 @@ function MiniSchedulePreview() {
   return (
     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50 space-y-3">
       <Radio label="Every day" active={false} />
-
       <Radio label="Specific days of the week" active={true}>
         <div className="flex gap-1.5 pl-5">
           {days.map((d, i) => (
-            <div
-              key={i}
-              className={`flex-1 h-6 rounded-md flex items-center justify-center text-xs font-semibold pointer-events-none select-none ${
-                selected.includes(i)
-                  ? 'bg-indigo-600 text-white'
-                  : 'border border-gray-200 dark:border-slate-600 text-gray-400 dark:text-slate-500'
-              }`}
-            >
+            <div key={i} className={`flex-1 h-6 rounded-md flex items-center justify-center text-xs font-semibold pointer-events-none select-none ${
+              selected.includes(i) ? 'bg-indigo-600 text-white' : 'border border-gray-200 dark:border-slate-600 text-gray-400 dark:text-slate-500'
+            }`}>
               {d}
             </div>
           ))}
         </div>
       </Radio>
-
       <Radio label="Every N days" active={false}>
         <div className="flex items-center gap-1.5 pl-5 text-xs text-gray-400 dark:text-slate-500">
           <span>Every</span>
@@ -320,7 +274,6 @@ function MiniSchedulePreview() {
           <span>days</span>
         </div>
       </Radio>
-
       <Radio label="Once a month" active={false}>
         <div className="flex items-center gap-1.5 pl-5 text-xs text-gray-400 dark:text-slate-500">
           <span>On the</span>
@@ -335,8 +288,8 @@ function MiniSchedulePreview() {
 /* ── Timeline preview ────────────────────────────────────────────────── */
 function MiniTimelinePreview() {
   const entries = [
-    { time: '08:00', name: 'Birth Control', color: '#ec4899', taken: true },
-    { time: '09:00', name: 'Vitamin D',     color: '#22c55e', taken: true },
+    { time: '08:00', name: 'Birth Control', color: '#ec4899', taken: true  },
+    { time: '09:00', name: 'Vitamin D',     color: '#22c55e', taken: true  },
     { time: '20:00', name: 'Omega-3',       color: '#f97316', taken: false },
     { time: '21:00', name: 'Vitamin D',     color: '#22c55e', taken: false },
   ];
@@ -347,13 +300,10 @@ function MiniTimelinePreview() {
           <span className="text-xs font-mono text-gray-400 dark:text-slate-500 w-10 shrink-0">{e.time}</span>
           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: e.color }} />
           <span className="text-xs text-gray-700 dark:text-slate-300 flex-1 truncate">{e.name}</span>
-          {e.taken ? (
-            <span className="text-xs text-green-500 font-semibold shrink-0">✓</span>
-          ) : (
-            <span className="text-[10px] text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-md font-medium pointer-events-none shrink-0">
-              Take
-            </span>
-          )}
+          {e.taken
+            ? <span className="text-xs text-green-500 font-semibold shrink-0">✓</span>
+            : <span className="text-[10px] text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-md font-medium pointer-events-none shrink-0">Take</span>
+          }
         </div>
       ))}
     </div>
@@ -363,7 +313,9 @@ function MiniTimelinePreview() {
 /* ── Feature card ────────────────────────────────────────────────────── */
 function FeatureCard({ emoji, title, desc, preview }) {
   return (
-    <div className="glass-card p-6 flex flex-col">
+    <div className="relative bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col overflow-hidden group transition-transform duration-200 hover:-translate-y-0.5">
+      {/* Hover accent stripe */}
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 to-violet-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="flex gap-4">
         <span className="text-2xl mt-0.5 shrink-0">{emoji}</span>
         <div>
@@ -379,7 +331,7 @@ function FeatureCard({ emoji, title, desc, preview }) {
   );
 }
 
-/* ── Main page ───────────────────────────────────────────────────────── */
+/* ── Landing page ────────────────────────────────────────────────────── */
 export default function LandingPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -388,6 +340,17 @@ export default function LandingPage() {
   const [pendingUser, setPendingUser] = useState(null);
   const [phone, setPhone] = useState('');
   const heroRef = useRef(null);
+
+  /* Inject distinctive heading font */
+  useEffect(() => {
+    if (!document.querySelector('#landing-font')) {
+      const link = document.createElement('link');
+      link.id = 'landing-font';
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&display=swap';
+      document.head.appendChild(link);
+    }
+  }, []);
 
   const handleCredential = async (idToken) => {
     setLoading(true);
@@ -432,19 +395,29 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-slate-950">
+    <div className="min-h-screen bg-white dark:bg-[#07090f] overflow-x-hidden">
 
-      {/* Phone step modal */}
+      {/* ── Scoped styles ── */}
+      <style>{`
+        .lh { font-family: 'Bricolage Grotesque', system-ui, sans-serif; letter-spacing: -0.025em; }
+        .grad { background: linear-gradient(130deg, #818cf8 0%, #a78bfa 60%, #c084fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .orb { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(80px); }
+      `}</style>
+
+      {/* ── Phone step modal ── */}
       {step === 'phone' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">One last thing</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+            <div className="w-11 h-11 rounded-2xl bg-indigo-600/10 flex items-center justify-center mb-5">
+              <span className="text-xl">📱</span>
+            </div>
+            <h2 className="lh text-xl font-bold text-gray-900 dark:text-white mb-1">One last thing</h2>
             <p className="text-gray-500 dark:text-slate-400 text-sm mb-6">
-              Add your phone number (optional). You can always update this in Settings.
+              Add your phone number — optional, always editable in Settings.
             </p>
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-                Phone number <span className="text-gray-400 dark:text-slate-500">(optional)</span>
+                Phone number <span className="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
               </label>
               <PhoneInput value={phone} onChange={setPhone} disabled={loading} />
             </div>
@@ -452,11 +425,7 @@ export default function LandingPage() {
               <button onClick={() => handlePhoneContinue(false)} disabled={loading} className="btn-primary w-full">
                 {loading ? 'Saving…' : 'Get started →'}
               </button>
-              <button
-                onClick={() => handlePhoneContinue(true)}
-                disabled={loading}
-                className="text-sm text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors py-1.5"
-              >
+              <button onClick={() => handlePhoneContinue(true)} disabled={loading} className="text-sm text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors py-1.5">
                 Skip for now
               </button>
             </div>
@@ -465,75 +434,128 @@ export default function LandingPage() {
       )}
 
       {/* ── Navbar ── */}
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-gray-200/80 dark:border-slate-800/60">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">💊</span>
-            <span className="font-bold text-gray-900 dark:text-white text-lg tracking-tight">PillReminder</span>
+      <header className="sticky top-0 z-30 bg-white/90 dark:bg-[#07090f]/90 backdrop-blur-md border-b border-gray-100 dark:border-slate-800/50">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md shadow-indigo-500/25">
+              <span className="text-sm">💊</span>
+            </div>
+            <span className="lh font-bold text-gray-900 dark:text-white text-lg">PillReminder</span>
           </div>
-          <button onClick={handleGetStarted} className="btn-primary text-sm py-1.5 px-4">
-            Get started
-          </button>
+          <div className="flex items-center gap-4">
+            <span className="hidden sm:inline text-xs text-gray-400 dark:text-slate-500 font-medium">Free forever</span>
+            <button
+              onClick={handleGetStarted}
+              className="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-semibold py-2 px-5 rounded-xl transition-colors shadow-md shadow-indigo-600/20"
+            >
+              Get started
+            </button>
+          </div>
         </div>
       </header>
 
       {/* ── Hero ── */}
       <section ref={heroRef} className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-transparent to-purple-600/5 dark:from-indigo-600/15 dark:to-purple-600/5 pointer-events-none" />
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-16 lg:py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        {/* Background orbs */}
+        <div className="orb w-[700px] h-[500px] top-[-100px] left-[-100px] bg-indigo-600/10 dark:bg-indigo-600/[0.07]" />
+        <div className="orb w-[400px] h-[400px] bottom-0 right-0 bg-violet-600/8 dark:bg-violet-600/[0.06]" />
+
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-20 pb-28">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
 
             {/* Left: copy */}
             <div className="flex flex-col items-start">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-600/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-semibold mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                Free
+              {/* Announcement chip */}
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-600/10 border border-indigo-200/70 dark:border-indigo-500/20 mb-8">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0" />
+                <span className="text-indigo-700 dark:text-indigo-400 text-xs font-semibold">100% free · No credit card needed</span>
               </div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white leading-tight mb-4">
-                Never miss<br />a dose again
+
+              <h1 className="lh text-5xl sm:text-6xl font-extrabold text-gray-900 dark:text-white leading-[1.06] mb-6">
+                Never miss<br />
+                <span className="grad">a dose</span><br />
+                again.
               </h1>
+
               <p className="text-base text-gray-500 dark:text-slate-400 leading-relaxed mb-8 max-w-md">
-                Track all your medications, get automatic email reminders, and build healthy habits with adherence charts and history.
+                Track all your medications, receive automatic email reminders, and build healthy habits — with adherence charts and full history.
               </p>
 
               <GoogleSignInButton loading={loading} onCredential={handleCredential} width={280} />
 
-              <p className="mt-3 text-xs text-gray-400 dark:text-slate-500">
-                Sign in with Google — no password needed.
-              </p>
+              {/* Trust signals */}
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-5">
+                {['🔒 End-to-end encrypted', '✉️ 3,000 emails / month free', '⚡ 2-min setup'].map((t) => (
+                  <span key={t} className="text-xs text-gray-400 dark:text-slate-500">{t}</span>
+                ))}
+              </div>
             </div>
 
-            {/* Right: app preview */}
+            {/* Right: tilted app preview */}
             <AppPreview />
           </div>
         </div>
       </section>
 
-      {/* ── Features ── */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Built around your routine</h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400">Simple to set up, powerful enough to track every dose.</p>
+      {/* ── Stats bar ── */}
+      <div className="border-y border-gray-100 dark:border-slate-800/50 bg-gray-50/70 dark:bg-slate-900/30 py-8">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 grid grid-cols-2 sm:grid-cols-4 gap-6">
+          {[
+            { stat: 'Free',    label: 'forever'             },
+            { stat: '3,000',   label: 'emails / month'      },
+            { stat: 'AES-256', label: 'encrypted API keys'  },
+            { stat: '0',       label: 'credit cards needed' },
+          ].map(({ stat, label }) => (
+            <div key={stat} className="text-center">
+              <div className="lh text-xl font-extrabold text-gray-900 dark:text-white">{stat}</div>
+              <div className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{label}</div>
+            </div>
+          ))}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      </div>
+
+      {/* ── Features ── */}
+      <section className="max-w-6xl mx-auto px-5 sm:px-8 py-24">
+        <div className="text-center mb-14">
+          <p className="text-xs font-bold tracking-widest text-indigo-500 uppercase mb-3">Features</p>
+          <h2 className="lh text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
+            Built around your routine
+          </h2>
+          <p className="text-gray-500 dark:text-slate-400 max-w-sm mx-auto text-sm">
+            Simple to set up, powerful enough to track every dose.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {FEATURES.map((f) => <FeatureCard key={f.title} {...f} />)}
         </div>
       </section>
 
       {/* ── How it works ── */}
-      <section className="bg-white dark:bg-slate-900/50 border-y border-gray-200 dark:border-slate-800/60 py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Up and running in minutes</h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400">No setup required beyond signing in.</p>
+      <section className="bg-gray-50 dark:bg-slate-900/40 border-y border-gray-100 dark:border-slate-800/50 py-24">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8">
+          <div className="text-center mb-14">
+            <p className="text-xs font-bold tracking-widest text-indigo-500 uppercase mb-3">How it works</p>
+            <h2 className="lh text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
+              Up and running in minutes
+            </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {STEPS.map(({ n, title, desc }) => (
-              <div key={n} className="flex flex-col items-center text-center">
-                <div className="w-10 h-10 rounded-full bg-indigo-600/15 border border-indigo-500/30 flex items-center justify-center mb-4 shrink-0">
-                  <span className="text-indigo-600 dark:text-indigo-400 font-bold text-sm">{n}</span>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative">
+            {/* Connecting dashes (desktop) */}
+            <div className="hidden md:block absolute top-[2.125rem] left-[calc(33.333%-1px)] right-[calc(33.333%-1px)] h-px"
+              style={{ background: 'repeating-linear-gradient(90deg, #6366f140 0, #6366f140 6px, transparent 6px, transparent 14px)' }}
+            />
+
+            {STEPS.map(({ n, icon, title, desc }) => (
+              <div key={n} className="relative flex flex-col items-center text-center p-7 rounded-2xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 shadow-sm">
+                {/* Step number badge */}
+                <div className="absolute top-5 right-5 w-5 h-5 rounded-full bg-indigo-600/15 dark:bg-indigo-600/20 flex items-center justify-center">
+                  <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400">{n}</span>
                 </div>
-                <h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-2 text-sm">{title}</h3>
+                <div className="w-16 h-16 rounded-2xl bg-indigo-600/8 dark:bg-indigo-600/12 flex items-center justify-center mb-5 text-3xl">
+                  {icon}
+                </div>
+                <h3 className="lh font-bold text-gray-900 dark:text-slate-100 mb-2">{title}</h3>
                 <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
               </div>
             ))}
@@ -542,21 +564,50 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 py-20">
-        <div className="bg-gradient-to-br from-indigo-600/10 to-purple-600/5 dark:from-indigo-600/15 dark:to-purple-600/5 border border-indigo-500/20 rounded-2xl px-8 py-12 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Ready to start?</h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mb-8">
-            Free forever. Sign in and add your first pill in under a minute.
-          </p>
-          <div className="flex justify-center">
-            <GoogleSignInButton loading={loading} onCredential={handleCredential} width={280} />
+      <section className="max-w-5xl mx-auto px-5 sm:px-8 py-24">
+        <div
+          className="relative overflow-hidden rounded-3xl px-8 py-20 text-center"
+          style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #6d28d9 50%, #7c3aed 100%)' }}
+        >
+          {/* Dot grid texture */}
+          <div
+            className="absolute inset-0 opacity-[0.08]"
+            style={{ backgroundImage: 'radial-gradient(circle, white 1.5px, transparent 1.5px)', backgroundSize: '28px 28px' }}
+          />
+          {/* Orbs */}
+          <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-56 h-56 bg-violet-300/10 rounded-full blur-3xl" />
+
+          <div className="relative">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-sm mb-5 text-3xl">
+              💊
+            </div>
+            <h2 className="lh text-3xl sm:text-5xl font-extrabold text-white mb-4">
+              Start tracking today
+            </h2>
+            <p className="text-indigo-200 text-base mb-10 max-w-md mx-auto">
+              Free forever. Add your first pill in under a minute.
+            </p>
+            <div className="flex justify-center">
+              <GoogleSignInButton loading={loading} onCredential={handleCredential} width={280} />
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-gray-200 dark:border-slate-800/60 py-6 text-center text-xs text-gray-400 dark:text-slate-500">
-        PillReminder — track your medications, build healthy habits.
+      <footer className="border-t border-gray-100 dark:border-slate-800/50 py-8">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+              <span className="text-[11px]">💊</span>
+            </div>
+            <span className="lh text-sm font-bold text-gray-600 dark:text-slate-400">PillReminder</span>
+          </div>
+          <p className="text-xs text-gray-400 dark:text-slate-600">
+            Track your medications. Build healthy habits.
+          </p>
+        </div>
       </footer>
     </div>
   );
