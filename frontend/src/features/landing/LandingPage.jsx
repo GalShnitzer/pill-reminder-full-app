@@ -213,22 +213,24 @@ function AppPreview() {
 }
 
 /* ── Mini bar chart preview ──────────────────────────────────────────── */
+const BAR_H = 56; // px — container height for the bars
 function MiniBarChart() {
+  const max = Math.max(...BAR_DATA.map((d) => d.h));
   return (
     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50">
-      <div className="flex items-end gap-1 h-14">
+      <div className="flex items-end gap-1.5" style={{ height: BAR_H }}>
         {BAR_DATA.map(({ day, h }, i) => (
-          <div key={i} className="flex flex-col items-center gap-1 flex-1">
+          <div key={i} className="flex flex-col items-center justify-end gap-1 flex-1">
             <div
-              className="w-full rounded-t-sm bg-indigo-500/70 dark:bg-indigo-400/60 transition-all"
-              style={{ height: `${h}%` }}
+              className="w-full rounded-sm bg-indigo-500 dark:bg-indigo-400"
+              style={{ height: Math.round((h / max) * (BAR_H - 14)) }}
             />
-            <span className="text-gray-400 dark:text-slate-500 text-[9px] font-medium">{day}</span>
+            <span className="text-gray-400 dark:text-slate-500 text-[9px] font-medium leading-none">{day}</span>
           </div>
         ))}
       </div>
       <div className="flex items-center gap-2 mt-2">
-        <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500/70 shrink-0" />
+        <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500 shrink-0" />
         <span className="text-xs text-gray-400 dark:text-slate-500">Adherence — last 7 days</span>
         <span className="ml-auto text-xs font-semibold text-green-500">87%</span>
       </div>
@@ -236,21 +238,35 @@ function MiniBarChart() {
   );
 }
 
-/* ── Mini heatmap preview ────────────────────────────────────────────── */
+/* ── Email preview (mirrors real email template) ─────────────────────── */
 function MiniEmailPreview() {
   return (
     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50">
-      <div className="bg-gray-50 dark:bg-slate-800/60 rounded-xl p-3 border border-gray-200 dark:border-slate-700/40 text-xs space-y-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-gray-400 dark:text-slate-500 w-8 shrink-0">From</span>
-          <span className="text-gray-600 dark:text-slate-300 font-medium">Pill Reminder</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-gray-400 dark:text-slate-500 w-8 shrink-0">Subj</span>
-          <span className="text-gray-700 dark:text-slate-200">⏰ Reminder: Take your Vitamin D</span>
-        </div>
-        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700/40 text-gray-500 dark:text-slate-400 leading-relaxed">
-          Hi Sarah, this is a reminder to take your <span className="font-semibold text-gray-700 dark:text-slate-200">Vitamin D</span> scheduled at 09:00.
+      {/* Force light background — emails always render light */}
+      <div className="bg-[#f9fafb] rounded-xl p-3 text-xs" style={{ fontFamily: 'sans-serif' }}>
+        <div className="bg-white rounded-lg p-4 border border-[#e5e7eb] space-y-2.5">
+          {/* Header */}
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+            <span className="text-xl leading-none">💊</span>
+            <span className="font-semibold text-[#4f46e5] text-sm">Pill Reminder</span>
+          </div>
+          {/* Body */}
+          <p className="text-[#111827]">Hi <strong>Sarah</strong>,</p>
+          <p className="text-[#374151]">
+            This is a reminder to take your{' '}
+            <strong className="text-[#4f46e5]">Vitamin D</strong>.
+          </p>
+          {/* Scheduled times box */}
+          <div className="bg-[#f3f4f6] rounded-lg px-3 py-2">
+            <p className="text-[#6b7280] text-[10px] uppercase font-semibold tracking-wide">Scheduled times</p>
+            <p className="text-[#111827] font-medium mt-0.5">09:00</p>
+          </div>
+          {/* CTA button */}
+          <div>
+            <span className="inline-block bg-[#4f46e5] text-white px-4 py-1.5 rounded-lg font-semibold text-[11px]">
+              Open Pill Reminder →
+            </span>
+          </div>
         </div>
       </div>
     </div>
