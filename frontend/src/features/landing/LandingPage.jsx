@@ -512,9 +512,9 @@ export default function LandingPage() {
         .clock-hands-group { transform-origin: 20px 20px; animation: step-clock-spin 4.5s ease-out infinite 1.5s; }
         .step-env-icon { display: inline-block; animation: step-env-fly 4.5s ease-out infinite 3s; }
         @keyframes step-card-glow {
-          0%, 34%, 100% { transform: scale(1); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-          10%  { transform: scale(1.035); box-shadow: 0 0 0 2.5px rgba(99,102,241,0.55), 0 8px 32px rgba(99,102,241,0.2); }
-          33%  { transform: scale(1.015); box-shadow: 0 0 0 1.5px rgba(99,102,241,0.35), 0 4px 16px rgba(99,102,241,0.12); }
+          0%, 34%, 100% { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+          10%  { box-shadow: 0 0 0 1.5px rgba(99,102,241,0.4), 0 6px 20px rgba(99,102,241,0.12); }
+          33%  { box-shadow: 0 0 0 1px rgba(99,102,241,0.25), 0 3px 10px rgba(99,102,241,0.07); }
         }
         .step-card-1 { animation: step-card-glow 4.5s ease-out infinite; }
         .step-card-2 { animation: step-card-glow 4.5s ease-out infinite 1.5s; }
@@ -578,11 +578,11 @@ export default function LandingPage() {
         <div className="orb w-[400px] h-[400px] bottom-0 right-0 bg-violet-600/8 dark:bg-violet-600/[0.06]" />
 
         <div className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-10 pb-14">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
 
             {/* Left: copy */}
-            <div className="flex flex-col items-start">
-              <h1 className="lh text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white leading-[1.06] mb-4">
+            <div className="flex flex-col items-start lg:pt-4">
+              <h1 className="lh text-5xl sm:text-6xl font-extrabold text-gray-900 dark:text-white leading-[1.06] mb-4">
                 Never miss<br />
                 <span className="grad">a dose</span><br />
                 again.
