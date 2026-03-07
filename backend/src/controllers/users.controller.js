@@ -1,6 +1,8 @@
 const User = require('../models/User');
+const Pill = require('../models/Pill');
 const asyncHandler = require('../utils/asyncHandler');
 const { encrypt, decrypt } = require('../utils/crypto.utils');
+const { sendPillReminder } = require('../services/email.service');
 
 // GET /api/users/profile
 const getProfile = asyncHandler(async (req, res) => {
@@ -57,4 +59,20 @@ const deleteResendKey = asyncHandler(async (req, res) => {
   res.json({ message: 'Resend API key removed' });
 });
 
-module.exports = { getProfile, updateProfile, saveResendKey, deleteResendKey };
+// POST /api/users/test-email
+const sendTestEmail = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.userId).lean();
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  if (!user.resendApiKey) return res.status(400).json({ message: 'No Resend API key configured' });
+
+  const pill = await Pill.findOne({ userId: req.userId, isActive: true }).lean();
+  const testPill = pill || { name: 'Test Pill', reminderHours: ['09:00'] };
+
+  const result = await sendPillReminder({ user, pill: testPill });
+  if (result.skipped || result.error) {
+    return res.status(500).json({ message: result.error || 'Failed to send email' });
+  }
+  res.json({ message: 'Test email sent successfully' });
+});
+
+module.exports = { getProfile, updateProfile, saveResendKey, deleteResendKey, sendTestEmail };

@@ -11,3 +11,6 @@ export const saveResendKey = (apiKey) =>
 
 export const deleteResendKey = () =>
   api.delete('/users/resend-key').then((r) => r.data);
+
+export const sendTestEmail = () =>
+  api.post('/users/test-email').then((r) => r.data);

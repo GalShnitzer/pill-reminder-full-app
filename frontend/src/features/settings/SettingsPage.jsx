@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { saveResendKey, deleteResendKey, updateProfile } from '../../services/user.service';
+import { saveResendKey, deleteResendKey, updateProfile, sendTestEmail } from '../../services/user.service';
 import Modal from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
 import { getApiError } from '../../utils/helpers';
@@ -12,6 +12,7 @@ export default function SettingsPage() {
   const [showKey, setShowKey] = useState(false);
   const [savingKey, setSavingKey] = useState(false);
   const [removingKey, setRemovingKey] = useState(false);
+  const [testingEmail, setTestingEmail] = useState(false);
   const [phone, setPhone] = useState(user?.phone || '');
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -28,6 +29,18 @@ export default function SettingsPage() {
       toast.error(getApiError(err));
     } finally {
       setSavingKey(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    setTestingEmail(true);
+    try {
+      await sendTestEmail();
+      toast.success('Test email sent! Check your inbox.');
+    } catch (err) {
+      toast.error(getApiError(err));
+    } finally {
+      setTestingEmail(false);
     }
   };
 
@@ -124,7 +137,14 @@ export default function SettingsPage() {
               <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
               <span className="text-green-400 text-sm font-medium">API key configured — reminders active</span>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
+              <button
+                onClick={handleTestEmail}
+                disabled={testingEmail}
+                className="btn-primary text-sm"
+              >
+                {testingEmail ? 'Sending...' : 'Send test email'}
+              </button>
               <button
                 onClick={() => setShowGuide(false) || setApiKey('')}
                 className="btn-secondary text-sm"
