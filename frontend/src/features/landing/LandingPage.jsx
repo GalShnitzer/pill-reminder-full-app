@@ -399,7 +399,7 @@ export default function LandingPage() {
         .orb { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(80px); }
         @keyframes preview-float {
           0%, 100% { transform: perspective(1100px) rotateY(-5deg) rotateX(1.5deg) translateY(0px); }
-          50%       { transform: perspective(1100px) rotateY(-5deg) rotateX(1.5deg) translateY(-14px); }
+          50%       { transform: perspective(1100px) rotateY(-5deg) rotateX(1.5deg) translateY(-6px); }
         }
         .preview-float { animation: preview-float 5s ease-in-out infinite; }
         @keyframes card-rise {
