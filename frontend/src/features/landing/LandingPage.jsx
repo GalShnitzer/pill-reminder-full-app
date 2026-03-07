@@ -274,24 +274,33 @@ function MiniBarChart() {
 function MiniEmailPreview() {
   return (
     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50">
-      <div className="bg-[#f9fafb] rounded-xl p-3 text-xs" style={{ fontFamily: 'sans-serif' }}>
-        <div className="bg-white rounded-lg p-4 border border-[#e5e7eb] space-y-2.5">
-          <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-            <span className="text-xl leading-none">💊</span>
-            <span className="font-semibold text-[#4f46e5] text-sm">Pill Reminder</span>
+      {/* Email client chrome — dark in dark mode so white email body looks intentional */}
+      <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-slate-600/40">
+        <div className="bg-gray-100 dark:bg-slate-700/80 px-3 py-1.5 flex items-center gap-1.5 border-b border-gray-200 dark:border-slate-600/40">
+          <span className="w-2 h-2 rounded-full bg-red-400/70" />
+          <span className="w-2 h-2 rounded-full bg-yellow-400/70" />
+          <span className="w-2 h-2 rounded-full bg-green-400/70" />
+          <span className="text-[9px] text-gray-400 dark:text-slate-400 ml-2 font-medium">Inbox — Pill Reminder</span>
+        </div>
+        <div className="bg-[#f9fafb] p-3 text-xs" style={{ fontFamily: 'sans-serif' }}>
+          <div className="bg-white rounded-lg p-4 border border-[#e5e7eb] space-y-2.5">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+              <span className="text-xl leading-none">💊</span>
+              <span className="font-semibold text-[#4f46e5] text-sm">Pill Reminder</span>
+            </div>
+            <p className="text-[#111827]">Hi <strong>Sarah</strong>,</p>
+            <p className="text-[#374151]">
+              This is a reminder to take your{' '}
+              <strong className="text-[#4f46e5]">Vitamin D</strong>.
+            </p>
+            <div className="bg-[#f3f4f6] rounded-lg px-3 py-2">
+              <p className="text-[#6b7280] text-[10px] uppercase font-semibold tracking-wide">Scheduled times</p>
+              <p className="text-[#111827] font-medium mt-0.5">09:00</p>
+            </div>
+            <span className="inline-block bg-[#4f46e5] text-white px-4 py-1.5 rounded-lg font-semibold text-[11px]">
+              Open Pill Reminder →
+            </span>
           </div>
-          <p className="text-[#111827]">Hi <strong>Sarah</strong>,</p>
-          <p className="text-[#374151]">
-            This is a reminder to take your{' '}
-            <strong className="text-[#4f46e5]">Vitamin D</strong>.
-          </p>
-          <div className="bg-[#f3f4f6] rounded-lg px-3 py-2">
-            <p className="text-[#6b7280] text-[10px] uppercase font-semibold tracking-wide">Scheduled times</p>
-            <p className="text-[#111827] font-medium mt-0.5">09:00</p>
-          </div>
-          <span className="inline-block bg-[#4f46e5] text-white px-4 py-1.5 rounded-lg font-semibold text-[11px]">
-            Open Pill Reminder →
-          </span>
         </div>
       </div>
     </div>
@@ -509,6 +518,10 @@ export default function LandingPage() {
           0%, 100% { opacity: 0.12; }
           50%       { opacity: 0.26; }
         }
+        .cta-gradient { background: linear-gradient(135deg, #3730a3 0%, #4f46e5 45%, #7c3aed 100%); opacity: 0.65; }
+        .dark .cta-gradient { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #2e1065 100%); opacity: 0.55; }
+        .cta-glow { background: radial-gradient(ellipse 75% 65% at 50% 50%, rgba(167,139,250,0.35) 0%, transparent 70%); }
+        .dark .cta-glow { background: radial-gradient(ellipse 75% 65% at 50% 50%, rgba(99,102,241,0.18) 0%, transparent 70%); }
         .step-pill-icon { display: inline-block; animation: step-pill-spin 4.5s ease-out infinite; }
         .clock-hands-group { transform-origin: 20px 20px; animation: step-clock-spin 4.5s ease-out infinite 1.5s; }
         .step-env-icon { display: inline-block; animation: step-env-fly 4.5s ease-out infinite 3s; }
@@ -521,8 +534,8 @@ export default function LandingPage() {
         }
         @keyframes step-card-glow-dark {
           0%   { box-shadow: none; }
-          7%   { box-shadow: 0 0 0 1.5px rgba(129,140,248,0.55), 0 6px 28px rgba(99,102,241,0.28); }
-          26%  { box-shadow: 0 0 0 1.5px rgba(129,140,248,0.55), 0 6px 28px rgba(99,102,241,0.28); }
+          7%   { box-shadow: 0 0 0 1px rgba(129,140,248,0.3), 0 8px 32px rgba(99,102,241,0.22); }
+          26%  { box-shadow: 0 0 0 1px rgba(129,140,248,0.3), 0 8px 32px rgba(99,102,241,0.22); }
           34%  { box-shadow: none; }
           100% { box-shadow: none; }
         }
@@ -532,6 +545,8 @@ export default function LandingPage() {
         .dark .step-card-1 { animation: step-card-glow-dark 4.5s linear infinite; }
         .dark .step-card-2 { animation: step-card-glow-dark 4.5s linear infinite 1.5s; }
         .dark .step-card-3 { animation: step-card-glow-dark 4.5s linear infinite 3s; }
+        .connector-line { background: repeating-linear-gradient(90deg, #6366f140 0, #6366f140 6px, transparent 6px, transparent 14px); }
+        .dark .connector-line { background: repeating-linear-gradient(90deg, #6366f125 0, #6366f125 6px, transparent 6px, transparent 14px); }
       `}</style>
 
       {/* ── Phone step modal ── */}
@@ -666,12 +681,10 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative">
             {/* Connecting dashes (desktop) */}
-            <div className="hidden md:block absolute top-[2.125rem] left-[calc(33.333%-1px)] right-[calc(33.333%-1px)] h-px"
-              style={{ background: 'repeating-linear-gradient(90deg, #6366f140 0, #6366f140 6px, transparent 6px, transparent 14px)' }}
-            />
+            <div className="hidden md:block absolute top-[2.125rem] left-[calc(33.333%-1px)] right-[calc(33.333%-1px)] h-px connector-line" />
 
             {STEPS.map(({ n, icon, title, desc }) => (
-              <div key={n} className={`relative flex flex-col items-center text-center p-7 rounded-2xl bg-white dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700/60 shadow-sm step-card-${n}`}>
+              <div key={n} className={`relative flex flex-col items-center text-center p-7 rounded-2xl bg-white dark:bg-slate-800/40 border border-gray-100 dark:border-slate-700/30 shadow-sm step-card-${n}`}>
                 {/* Step number badge */}
                 <div className="absolute top-5 right-5 w-5 h-5 rounded-full bg-indigo-600/15 dark:bg-indigo-500/25 flex items-center justify-center">
                   <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-300">{n}</span>
@@ -695,15 +708,9 @@ export default function LandingPage() {
           className="relative overflow-hidden rounded-3xl px-8 py-20 text-center bg-[#1e1b4b]"
         >
           {/* Main gradient — slightly transparent so base shows through */}
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #3730a3 0%, #4f46e5 45%, #7c3aed 100%)', opacity: 0.65 }} />
+          <div className="cta-gradient absolute inset-0" />
           {/* Animated center glow */}
-          <div
-            className="absolute inset-0 rounded-3xl"
-            style={{
-              background: 'radial-gradient(ellipse 75% 65% at 50% 50%, rgba(167,139,250,0.35) 0%, transparent 70%)',
-              animation: 'cta-pulse 4s ease-in-out infinite',
-            }}
-          />
+          <div className="cta-glow absolute inset-0 rounded-3xl" style={{ animation: 'cta-pulse 4s ease-in-out infinite' }} />
           {/* Dot grid texture */}
           <div
             className="absolute inset-0 opacity-[0.07]"
