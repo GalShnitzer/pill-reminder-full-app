@@ -125,6 +125,27 @@ function MockPillCard({ pill }) {
   );
 }
 
+/* ── Animated clock SVG (for step 2) ────────────────────────────────── */
+function AnimatedClockIcon() {
+  return (
+    <svg width="44" height="44" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+      <circle cx="20" cy="20" r="17.5" stroke="#6366f1" strokeWidth="2" fill="#6366f1" fillOpacity="0.15" />
+      {/* Hour markers at 12, 3, 6, 9 */}
+      <circle cx="20" cy="4"  r="1.3" fill="#818cf8" />
+      <circle cx="36" cy="20" r="1.3" fill="#818cf8" />
+      <circle cx="20" cy="36" r="1.3" fill="#818cf8" />
+      <circle cx="4"  cy="20" r="1.3" fill="#818cf8" />
+      {/* Hour hand — static, pointing to ~10 o'clock */}
+      <line x1="20" y1="20" x2="13.1" y2="16" stroke="#a5b4fc" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Minute hand — spins via CSS */}
+      <g className="clock-hands-group">
+        <line x1="20" y1="20" x2="20" y2="6" stroke="#c7d2fe" strokeWidth="2" strokeLinecap="round" />
+      </g>
+      <circle cx="20" cy="20" r="2.5" fill="#6366f1" />
+    </svg>
+  );
+}
+
 /* ── App preview ─────────────────────────────────────────────────────── */
 function AppPreview() {
   return (
@@ -401,7 +422,14 @@ export default function LandingPage() {
           0%, 100% { transform: perspective(1100px) rotateY(-5deg) rotateX(1.5deg) translateY(0px); }
           50%       { transform: perspective(1100px) rotateY(-5deg) rotateX(1.5deg) translateY(-6px); }
         }
+        @keyframes preview-float-mobile {
+          0%, 100% { transform: translateY(0px); }
+          50%       { transform: translateY(-5px); }
+        }
         .preview-float { animation: preview-float 5s ease-in-out infinite; }
+        @media (max-width: 1023px) {
+          .preview-float { animation-name: preview-float-mobile; }
+        }
         @keyframes card-rise {
           from { opacity: 0; transform: translateY(18px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -410,6 +438,31 @@ export default function LandingPage() {
         .feature-card:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 16px 40px -8px rgba(99,102,241,0.18); }
         .feature-card:hover .card-emoji { transform: scale(1.2) rotate(-8deg); }
         .card-emoji { transition: transform 0.25s cubic-bezier(.34,1.56,.64,1); display: inline-block; }
+        @keyframes step-pill-spin {
+          0%    { transform: rotate(0deg) scale(1); }
+          20%   { transform: rotate(720deg) scale(1.2); }
+          28%   { transform: rotate(700deg) scale(1.05); }
+          33%   { transform: rotate(720deg) scale(1); }
+          100%  { transform: rotate(720deg) scale(1); }
+        }
+        @keyframes step-clock-spin {
+          0%    { transform: rotate(0deg); }
+          25%   { transform: rotate(360deg); }
+          100%  { transform: rotate(360deg); }
+        }
+        @keyframes step-env-fly {
+          0%, 100% { transform: translate(0,0) scale(1); opacity: 1; }
+          18%      { transform: translate(22px,-18px) scale(0.5); opacity: 0; }
+          19%      { transform: translate(-4px,6px) scale(0.85); opacity: 0.3; }
+          33%      { transform: translate(0,0) scale(1); opacity: 1; }
+        }
+        @keyframes cta-pulse {
+          0%, 100% { opacity: 0.12; }
+          50%       { opacity: 0.26; }
+        }
+        .step-pill-icon { display: inline-block; animation: step-pill-spin 9s ease-in-out infinite; }
+        .clock-hands-group { transform-origin: 20px 20px; animation: step-clock-spin 9s ease-in-out infinite 3s; }
+        .step-env-icon { display: inline-block; animation: step-env-fly 9s ease-in-out infinite 6s; }
       `}</style>
 
       {/* ── Phone step modal ── */}
@@ -560,8 +613,10 @@ export default function LandingPage() {
                 <div className="absolute top-5 right-5 w-5 h-5 rounded-full bg-indigo-600/15 dark:bg-indigo-600/20 flex items-center justify-center">
                   <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400">{n}</span>
                 </div>
-                <div className="w-16 h-16 rounded-2xl bg-indigo-600/8 dark:bg-indigo-600/12 flex items-center justify-center mb-5 text-3xl">
-                  {icon}
+                <div className="w-16 h-16 rounded-2xl bg-indigo-600/8 dark:bg-indigo-600/12 flex items-center justify-center mb-5">
+                  {n === 1 && <span className="text-3xl step-pill-icon">{icon}</span>}
+                  {n === 2 && <AnimatedClockIcon />}
+                  {n === 3 && <span className="text-3xl step-env-icon">{icon}</span>}
                 </div>
                 <h3 className="lh font-bold text-gray-900 dark:text-slate-100 mb-2">{title}</h3>
                 <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
@@ -575,16 +630,24 @@ export default function LandingPage() {
       <section className="max-w-5xl mx-auto px-5 sm:px-8 py-24">
         <div
           className="relative overflow-hidden rounded-3xl px-8 py-20 text-center"
-          style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #6d28d9 50%, #7c3aed 100%)' }}
+          style={{ background: 'linear-gradient(125deg, #1e1b4b 0%, #4f46e5 40%, #7c3aed 100%)' }}
         >
+          {/* Animated center glow */}
+          <div
+            className="absolute inset-0 rounded-3xl"
+            style={{
+              background: 'radial-gradient(ellipse 75% 65% at 50% 50%, rgba(167,139,250,0.35) 0%, transparent 70%)',
+              animation: 'cta-pulse 4s ease-in-out infinite',
+            }}
+          />
           {/* Dot grid texture */}
           <div
-            className="absolute inset-0 opacity-[0.08]"
+            className="absolute inset-0 opacity-[0.07]"
             style={{ backgroundImage: 'radial-gradient(circle, white 1.5px, transparent 1.5px)', backgroundSize: '28px 28px' }}
           />
           {/* Orbs */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-56 h-56 bg-violet-300/10 rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-300/10 rounded-full blur-3xl" />
 
           <div className="relative">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-sm mb-5 text-3xl">
