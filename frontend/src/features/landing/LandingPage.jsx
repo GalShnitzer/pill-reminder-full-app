@@ -511,6 +511,14 @@ export default function LandingPage() {
         .step-pill-icon { display: inline-block; animation: step-pill-spin 4.5s ease-out infinite; }
         .clock-hands-group { transform-origin: 20px 20px; animation: step-clock-spin 4.5s ease-out infinite 1.5s; }
         .step-env-icon { display: inline-block; animation: step-env-fly 4.5s ease-out infinite 3s; }
+        @keyframes step-card-glow {
+          0%, 34%, 100% { transform: scale(1); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+          10%  { transform: scale(1.035); box-shadow: 0 0 0 2.5px rgba(99,102,241,0.55), 0 8px 32px rgba(99,102,241,0.2); }
+          33%  { transform: scale(1.015); box-shadow: 0 0 0 1.5px rgba(99,102,241,0.35), 0 4px 16px rgba(99,102,241,0.12); }
+        }
+        .step-card-1 { animation: step-card-glow 4.5s ease-out infinite; }
+        .step-card-2 { animation: step-card-glow 4.5s ease-out infinite 1.5s; }
+        .step-card-3 { animation: step-card-glow 4.5s ease-out infinite 3s; }
       `}</style>
 
       {/* ── Phone step modal ── */}
@@ -569,25 +577,25 @@ export default function LandingPage() {
         <div className="orb w-[700px] h-[500px] top-[-100px] left-[-100px] bg-indigo-600/10 dark:bg-indigo-600/[0.07]" />
         <div className="orb w-[400px] h-[400px] bottom-0 right-0 bg-violet-600/8 dark:bg-violet-600/[0.06]" />
 
-        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-20 pb-28">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-10 pb-14">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 
             {/* Left: copy */}
             <div className="flex flex-col items-start">
-              <h1 className="lh text-5xl sm:text-6xl font-extrabold text-gray-900 dark:text-white leading-[1.06] mb-6">
+              <h1 className="lh text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white leading-[1.06] mb-4">
                 Never miss<br />
                 <span className="grad">a dose</span><br />
                 again.
               </h1>
 
-              <p className="text-base text-gray-500 dark:text-slate-400 leading-relaxed mb-8 max-w-md">
+              <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed mb-5 max-w-md">
                 Track all your medications, receive automatic email reminders, and build healthy habits — with adherence charts and full history.
               </p>
 
               <GoogleSignInButton loading={loading} onCredential={handleCredential} width={280} />
 
               {/* Trust signals */}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-5">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4">
                 {['🔒 Encrypted', '⚡ 2-min setup', '🌍 Works anywhere'].map((t) => (
                   <span key={t} className="text-xs text-gray-400 dark:text-slate-500">{t}</span>
                 ))}
@@ -650,7 +658,7 @@ export default function LandingPage() {
             />
 
             {STEPS.map(({ n, icon, title, desc }) => (
-              <div key={n} className="relative flex flex-col items-center text-center p-7 rounded-2xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 shadow-sm">
+              <div key={n} className={`relative flex flex-col items-center text-center p-7 rounded-2xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 shadow-sm step-card-${n}`}>
                 {/* Step number badge */}
                 <div className="absolute top-5 right-5 w-5 h-5 rounded-full bg-indigo-600/15 dark:bg-indigo-600/20 flex items-center justify-center">
                   <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400">{n}</span>
