@@ -5,6 +5,7 @@ import { googleSignIn } from '../../services/auth.service';
 import { updateProfile } from '../../services/user.service';
 import { useAuth } from '../../context/AuthContext';
 import { getApiError } from '../../utils/helpers';
+import PhoneInput from '../../components/ui/PhoneInput';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -95,14 +96,10 @@ export default function LoginPage() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
                   Phone number <span className="text-gray-400 dark:text-slate-500">(optional — needed for SMS reminders)</span>
                 </label>
-                <input
-                  type="tel"
+                <PhoneInput
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+972 50 000 0000"
-                  className="input-field"
-                  autoFocus
-                  onKeyDown={(e) => e.key === 'Enter' && handlePhoneContinue(false)}
+                  onChange={setPhone}
+                  disabled={loading}
                 />
               </div>
 

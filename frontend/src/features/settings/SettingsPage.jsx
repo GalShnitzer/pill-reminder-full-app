@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { saveResendKey, deleteResendKey, updateProfile, sendTestEmail } from '../../services/user.service';
 import Modal from '../../components/ui/Modal';
+import PhoneInput from '../../components/ui/PhoneInput';
 import toast from 'react-hot-toast';
 import { getApiError } from '../../utils/helpers';
 
@@ -96,13 +97,13 @@ export default function SettingsPage() {
           </div>
           <form onSubmit={handleSaveProfile}>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Phone number</label>
-              <input
-                type="tel"
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                Phone number <span className="text-gray-400 dark:text-slate-500 font-normal">(needed for SMS reminders)</span>
+              </label>
+              <PhoneInput
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+972 50 000 0000"
-                className="input-field"
+                onChange={setPhone}
+                disabled={savingProfile}
               />
             </div>
             <button type="submit" disabled={savingProfile} className="btn-primary">
