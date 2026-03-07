@@ -685,7 +685,7 @@ export default function LandingPage() {
                 <div className="absolute top-5 right-5 w-5 h-5 rounded-full bg-indigo-600/15 dark:bg-indigo-500/25 flex items-center justify-center">
                   <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-300">{n}</span>
                 </div>
-                <div className="w-16 h-16 rounded-2xl bg-indigo-600/8 dark:bg-indigo-500/20 flex items-center justify-center mb-5">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-600/8 dark:bg-transparent flex items-center justify-center mb-5">
                   {n === 1 && <span className="text-3xl step-pill-icon">{icon}</span>}
                   {n === 2 && <AnimatedClockIcon />}
                   {n === 3 && <span className="text-3xl step-env-icon">{icon}</span>}
