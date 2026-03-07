@@ -11,6 +11,7 @@ const {
   takePill,
   untakePill,
   getPillHistory,
+  getInactivePills,
 } = require('../controllers/pills.controller');
 
 const hourPattern = Joi.string().pattern(/^\d{2}:\d{2}$/);
@@ -56,6 +57,7 @@ const takePillSchema = Joi.object({
 router.use(authMiddleware);
 
 router.get('/', getPills);
+router.get('/inactive', getInactivePills);
 router.post('/', validate(createPillSchema), createPill);
 router.patch('/:id', validate(updatePillSchema), updatePill);
 router.delete('/:id', deletePill);

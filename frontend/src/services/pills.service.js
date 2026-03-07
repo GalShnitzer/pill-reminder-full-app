@@ -20,3 +20,6 @@ export const untakePill = (id, scheduledHour) =>
 
 export const getPillHistory = (id) =>
   api.get(`/pills/${id}/history`).then((r) => r.data);
+
+export const getInactivePills = () =>
+  api.get('/pills/inactive').then((r) => r.data.pills);

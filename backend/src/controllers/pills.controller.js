@@ -200,4 +200,10 @@ const getPillHistory = asyncHandler(async (req, res) => {
   res.json({ pill, logs: calendar, timezone: tz });
 });
 
-module.exports = { getPills, createPill, updatePill, deletePill, takePill, untakePill, getPillHistory };
+// GET /api/pills/inactive — list soft-deleted (isActive: false) pills for the user
+const getInactivePills = asyncHandler(async (req, res) => {
+  const pills = await Pill.find({ userId: req.userId, isActive: false }).lean();
+  res.json({ pills });
+});
+
+module.exports = { getPills, createPill, updatePill, deletePill, takePill, untakePill, getPillHistory, getInactivePills };

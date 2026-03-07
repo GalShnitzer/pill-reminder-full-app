@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
 import Modal from '../../components/ui/Modal';
-import { createPill, updatePill } from '../../services/pills.service';
+import { createPill, updatePill, getInactivePills } from '../../services/pills.service';
 import { getApiError, timeToMinutes } from '../../utils/helpers';
 
 // ---------------------------------------------------------------------------
@@ -142,6 +142,15 @@ function PlusIcon({ className = 'w-4 h-4' }) {
   );
 }
 
+function HistoryIcon({ className = 'w-4 h-4' }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3M3 12a9 9 0 1 0 2.6-6.4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v4.5h4.5" />
+    </svg>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -153,12 +162,32 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
+  const [showRecover, setShowRecover] = useState(false);
+  const [inactivePills, setInactivePills] = useState([]);
+  const [recoverLoading, setRecoverLoading] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
       setForm(buildInitialForm(existingPill));
       setErrors({});
+      setShowRecover(false);
+      setInactivePills([]);
     }
   }, [isOpen, existingPill]);
+
+  useEffect(() => {
+    if (!showRecover) return;
+    setRecoverLoading(true);
+    getInactivePills()
+      .then(setInactivePills)
+      .catch(() => toast.error('Failed to load previous pills'))
+      .finally(() => setRecoverLoading(false));
+  }, [showRecover]);
+
+  function handleRecover(pill) {
+    setForm({ ...buildInitialForm(pill), startDate: today(), endDate: '' });
+    setShowRecover(false);
+  }
 
   // ---------------------------------------------------------------------------
   // Field handlers
@@ -271,6 +300,51 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
       size="lg"
     >
       <form onSubmit={handleSubmit} noValidate>
+        {/* ---- Recover pill panel (add mode only) ---- */}
+        {!isEditing && (
+          <div className="mb-5">
+            <button
+              type="button"
+              onClick={() => setShowRecover((v) => !v)}
+              className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+            >
+              <HistoryIcon className="w-4 h-4" />
+              {showRecover ? 'Hide previous pills' : 'Recover a previous pill'}
+            </button>
+
+            {showRecover && (
+              <div className="mt-3 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
+                {recoverLoading ? (
+                  <p className="p-4 text-center text-sm text-gray-400 dark:text-slate-500">Loading…</p>
+                ) : inactivePills.length === 0 ? (
+                  <p className="p-4 text-center text-sm text-gray-400 dark:text-slate-500">No previous pills found.</p>
+                ) : (
+                  <ul className="divide-y divide-gray-100 dark:divide-slate-700/50 max-h-48 overflow-y-auto">
+                    {inactivePills.map((p) => (
+                      <li key={p._id}>
+                        <button
+                          type="button"
+                          onClick={() => handleRecover(p)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+                        >
+                          <span
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: p.color || '#6366f1' }}
+                          />
+                          <span className="text-sm font-medium text-gray-800 dark:text-slate-200">{p.name}</span>
+                          <span className="ml-auto text-xs text-gray-400 dark:text-slate-500 shrink-0">
+                            {p.reminderHours.join(', ')}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-5">
           {/* ---- 1. Pill name ---- */}
           <div>
