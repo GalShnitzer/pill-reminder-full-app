@@ -269,6 +269,17 @@ export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
   };
 
   // ---------------------------------------------------------------------------
+  // Chart theme (class-based dark mode)
+  // ---------------------------------------------------------------------------
+  const isDark = document.documentElement.classList.contains('dark');
+  const chartColors = {
+    grid: isDark ? '#334155' : '#e2e8f0',
+    tick: isDark ? '#94a3b8' : '#64748b',
+    axis: isDark ? '#475569' : '#cbd5e1',
+    cursor: isDark ? '#1e293b80' : '#94a3b820',
+  };
+
+  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
   return (
@@ -343,26 +354,29 @@ export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart
                   data={chartData}
-                  margin={{ top: 8, right: 8, left: 0, bottom: 4 }}
+                  margin={{ top: 8, right: 8, left: 0, bottom: 28 }}
                   barCategoryGap="30%"
                   barGap={2}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="#334155"
+                    stroke={chartColors.grid}
                     vertical={false}
                   />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: '#94a3b8', fontSize: 11 }}
-                    axisLine={{ stroke: '#475569' }}
+                    tick={{ fill: chartColors.tick, fontSize: 10 }}
+                    axisLine={{ stroke: chartColors.axis }}
                     tickLine={false}
-                    interval={1}
+                    interval={0}
+                    angle={-35}
+                    textAnchor="end"
+                    dy={4}
                   />
                   <YAxis
                     domain={[yMin, yMax]}
                     tickFormatter={decimalToHM}
-                    tick={{ fill: '#94a3b8', fontSize: 11 }}
+                    tick={{ fill: chartColors.tick, fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                     width={46}
@@ -371,7 +385,7 @@ export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
                       (_, i) => yMin + i
                     ).filter((_, i) => i % 2 === 0)}
                   />
-                  <Tooltip content={<DarkTooltip />} cursor={{ fill: '#1e293b80' }} />
+                  <Tooltip content={<DarkTooltip />} cursor={{ fill: chartColors.cursor }} />
                   {/* Scheduled bar — indigo */}
                   <Bar dataKey="scheduled" name="Scheduled" maxBarSize={18} radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, index) => (
