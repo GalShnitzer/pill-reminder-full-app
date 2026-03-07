@@ -499,10 +499,11 @@ export default function LandingPage() {
           100%  { transform: rotate(360deg); }
         }
         @keyframes step-env-fly {
-          0%, 100% { transform: translate(0,0) scale(1); opacity: 1; }
-          18%      { transform: translate(22px,-18px) scale(0.5); opacity: 0; }
-          19%      { transform: translate(-4px,6px) scale(0.85); opacity: 0.3; }
-          33%      { transform: translate(0,0) scale(1); opacity: 1; }
+          0%    { transform: translate(0,0) scale(1);    opacity: 1; }
+          18%   { transform: translate(28px,-22px) scale(0); opacity: 0; }
+          18.1% { transform: translate(0, 18px) scale(0);   opacity: 0; }
+          33%   { transform: translate(0, 0) scale(1);   opacity: 1; }
+          100%  { transform: translate(0, 0) scale(1);   opacity: 1; }
         }
         @keyframes cta-pulse {
           0%, 100% { opacity: 0.12; }
@@ -579,7 +580,7 @@ export default function LandingPage() {
         <div className="orb w-[700px] h-[500px] top-[-100px] left-[-100px] bg-indigo-600/10 dark:bg-indigo-600/[0.07]" />
         <div className="orb w-[400px] h-[400px] bottom-0 right-0 bg-violet-600/8 dark:bg-violet-600/[0.06]" />
 
-        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-12 w-full">
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-8 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 
             {/* Left: copy */}
