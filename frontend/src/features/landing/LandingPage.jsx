@@ -684,7 +684,7 @@ export default function LandingPage() {
           className="relative overflow-hidden rounded-3xl px-8 py-20 text-center bg-[#1e1b4b]"
         >
           {/* Main gradient — slightly transparent so base shows through */}
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #3730a3 0%, #4f46e5 45%, #7c3aed 100%)', opacity: 0.82 }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #3730a3 0%, #4f46e5 45%, #7c3aed 100%)', opacity: 0.65 }} />
           {/* Animated center glow */}
           <div
             className="absolute inset-0 rounded-3xl"
