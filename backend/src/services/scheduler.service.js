@@ -3,6 +3,7 @@ const Pill = require('../models/Pill');
 const PillLog = require('../models/PillLog');
 const User = require('../models/User');
 const { sendPillReminder } = require('./email.service');
+const { sendPillReminderSms } = require('./sms.service');
 
 // Returns true if the pill should be active on the given date string (YYYY-MM-DD)
 function isScheduledToday(pill, dateStr) {
@@ -82,7 +83,9 @@ async function checkAndSendReminders() {
           const doseTaken = await PillLog.findOne({ pillId: pill._id, date: today, scheduledHour: h }).lean();
           if (doseTaken) continue;
 
-          await sendPillReminder({ user, pill });
+          const channels = pill.reminderChannels?.length ? pill.reminderChannels : ['email'];
+          if (channels.includes('email')) await sendPillReminder({ user, pill });
+          if (channels.includes('sms'))   await sendPillReminderSms({ user, pill });
           break; // send at most one reminder per cron tick per pill
         }
       } catch (err) {

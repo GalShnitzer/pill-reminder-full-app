@@ -96,6 +96,19 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* No phone number warning (SMS available but no phone set) */}
+        {user?.hasTwilioSms && !user?.phone && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm">
+            <span>⚠️ No phone number set — SMS reminders won't work.</span>
+            <Link
+              to="/settings"
+              className="ml-auto shrink-0 font-semibold underline hover:text-amber-200 transition-colors"
+            >
+              Go to Settings →
+            </Link>
+          </div>
+        )}
+
         {/* Page header */}
         <div className="flex items-start justify-between gap-4">
           <div>

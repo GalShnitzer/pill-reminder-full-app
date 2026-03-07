@@ -182,6 +182,34 @@ export default function SettingsPage() {
         )}
       </section>
 
+      {/* SMS reminders card */}
+      <section className="glass-card p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <span>📱</span> SMS reminders
+        </h2>
+        {user?.hasTwilioSms ? (
+          user?.phone ? (
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/30">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-green-400 text-sm font-medium">
+                SMS reminders available — phone number is set ({user.phone})
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+              <span className="text-amber-400">⚠️</span>
+              <span className="text-amber-300 text-sm">
+                Add your phone number in the Profile section above to enable SMS reminders.
+              </span>
+            </div>
+          )
+        ) : (
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            SMS reminders are not enabled on this server. Contact the administrator to set up Twilio.
+          </p>
+        )}
+      </section>
+
       {/* Resend Guide Modal */}
       <Modal isOpen={showGuide} onClose={() => setShowGuide(false)} title="How to get a Resend API key" size="lg">
         <div className="space-y-5 text-sm text-gray-700 dark:text-slate-300">

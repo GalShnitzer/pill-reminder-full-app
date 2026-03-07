@@ -3,6 +3,9 @@ const asyncHandler = require('../utils/asyncHandler');
 const { encrypt, decrypt } = require('../utils/crypto.utils');
 const { sendConnectionTest } = require('../services/email.service');
 
+const hasTwilioSms = () =>
+  !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER);
+
 // GET /api/users/profile
 const getProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.userId).lean();
@@ -15,6 +18,7 @@ const getProfile = asyncHandler(async (req, res) => {
       phone: user.phone,
       timezone: user.timezone,
       hasResendKey: !!user.resendApiKey,
+      hasTwilioSms: hasTwilioSms(),
     },
   });
 });
@@ -36,6 +40,7 @@ const updateProfile = asyncHandler(async (req, res) => {
       phone: user.phone,
       timezone: user.timezone,
       hasResendKey: !!user.resendApiKey,
+      hasTwilioSms: hasTwilioSms(),
     },
   });
 });

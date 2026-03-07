@@ -22,6 +22,7 @@ const pillSchema = new mongoose.Schema(
     scheduleWeekdays: { type: [Number], default: [] }, // 0=Sun ... 6=Sat
     scheduleMonthDay: { type: Number, min: 1, max: 31, default: 1 },
     scheduleStartDate: { type: String, default: '' }, // YYYY-MM-DD, used by every_n_days
+    reminderChannels: { type: [String], default: ['email'] }, // 'email', 'sms'
   },
   { timestamps: true }
 );

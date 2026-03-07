@@ -49,6 +49,7 @@ const createPill = asyncHandler(async (req, res) => {
   const {
     name, reminderHours, emailStartHour, emailFrequencyMinutes, emailEndHour, color,
     scheduleType, scheduleInterval, scheduleWeekdays, scheduleMonthDay, scheduleStartDate,
+    reminderChannels,
   } = req.body;
 
   const pill = await Pill.create({
@@ -64,6 +65,7 @@ const createPill = asyncHandler(async (req, res) => {
     scheduleWeekdays: scheduleWeekdays || [],
     scheduleMonthDay: scheduleMonthDay || 1,
     scheduleStartDate: scheduleStartDate || new Date().toLocaleDateString('en-CA'),
+    reminderChannels: reminderChannels?.length ? reminderChannels : ['email'],
   });
   res.status(201).json({ pill });
 });
