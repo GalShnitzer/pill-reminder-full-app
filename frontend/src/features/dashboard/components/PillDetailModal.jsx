@@ -449,7 +449,7 @@ export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
             <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-4">No history yet.</p>
           ) : (
             <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
-              {[...logs].reverse().map((log, i) => (
+              {logs.slice(0, 7).map((log, i) => (
                 <div
                   key={i}
                   className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm transition-colors ${
