@@ -14,9 +14,6 @@ function startScheduler() {
 
 async function checkAndSendReminders() {
   const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-  const currentTotalMinutes = currentHour * 60 + currentMinute;
 
   try {
     const activePills = await Pill.find({ isActive: true }).lean();
@@ -28,7 +25,12 @@ async function checkAndSendReminders() {
         if (!user) continue;
 
         const timezone = user.timezone || 'Asia/Jerusalem';
-        const today = new Date().toLocaleDateString('en-CA', { timeZone: timezone });
+        const today = now.toLocaleDateString('en-CA', { timeZone: timezone });
+
+        // Use user's local time for hour/minute comparison
+        const localTime = now.toLocaleTimeString('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit' });
+        const [currentHour, currentMinute] = localTime.split(':').map(Number);
+        const currentTotalMinutes = currentHour * 60 + currentMinute;
 
         // Check if pill already taken today
         const alreadyTaken = await PillLog.findOne({ pillId: pill._id, date: today });
