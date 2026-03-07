@@ -81,7 +81,7 @@ function PillIcon({ color = '#6366f1', size = 24 }) {
 function MockPillCard({ pill }) {
   const allTaken = pill.takenHours.length === pill.hours.length;
   return (
-    <div className="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700/40 rounded-xl p-3.5 flex flex-col gap-2">
+    <div className="bg-white dark:bg-slate-700/30 border border-gray-200 dark:border-slate-600/40 rounded-xl p-3.5 flex flex-col gap-2">
       <div className="flex items-start justify-between gap-2">
         <span className="font-semibold text-sm text-gray-900 dark:text-slate-100">{pill.name}</span>
         <PillIcon color={pill.color} size={20} />
@@ -377,7 +377,7 @@ function MiniTimelinePreview() {
 /* ── Feature card ────────────────────────────────────────────────────── */
 function FeatureCard({ emoji, title, desc, preview }) {
   return (
-    <div className="feature-card relative bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col overflow-hidden group">
+    <div className="feature-card relative bg-white dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/60 rounded-2xl p-6 flex flex-col overflow-hidden group">
       {/* Hover accent stripe */}
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 to-violet-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="flex gap-4">
@@ -519,9 +519,19 @@ export default function LandingPage() {
           34%  { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
           100% { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         }
+        @keyframes step-card-glow-dark {
+          0%   { box-shadow: none; }
+          7%   { box-shadow: 0 0 0 1.5px rgba(129,140,248,0.55), 0 6px 28px rgba(99,102,241,0.28); }
+          26%  { box-shadow: 0 0 0 1.5px rgba(129,140,248,0.55), 0 6px 28px rgba(99,102,241,0.28); }
+          34%  { box-shadow: none; }
+          100% { box-shadow: none; }
+        }
         .step-card-1 { animation: step-card-glow 4.5s linear infinite; }
         .step-card-2 { animation: step-card-glow 4.5s linear infinite 1.5s; }
         .step-card-3 { animation: step-card-glow 4.5s linear infinite 3s; }
+        .dark .step-card-1 { animation: step-card-glow-dark 4.5s linear infinite; }
+        .dark .step-card-2 { animation: step-card-glow-dark 4.5s linear infinite 1.5s; }
+        .dark .step-card-3 { animation: step-card-glow-dark 4.5s linear infinite 3s; }
       `}</style>
 
       {/* ── Phone step modal ── */}
@@ -577,8 +587,8 @@ export default function LandingPage() {
       {/* ── Hero ── */}
       <section ref={heroRef} className="relative overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col justify-center">
         {/* Background orbs */}
-        <div className="orb w-[700px] h-[500px] top-[-100px] left-[-100px] bg-indigo-600/10 dark:bg-indigo-600/[0.07]" />
-        <div className="orb w-[400px] h-[400px] bottom-0 right-0 bg-violet-600/8 dark:bg-violet-600/[0.06]" />
+        <div className="orb w-[700px] h-[500px] top-[-100px] left-[-100px] bg-indigo-600/10 dark:bg-indigo-500/[0.22]" />
+        <div className="orb w-[400px] h-[400px] bottom-0 right-0 bg-violet-600/8 dark:bg-violet-500/[0.14]" />
 
         <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-8 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
@@ -612,7 +622,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Stats bar ── */}
-      <div className="border-y border-gray-100 dark:border-slate-800/50 bg-gray-50/70 dark:bg-slate-900/30 py-8">
+      <div className="border-y border-gray-100 dark:border-slate-700/50 bg-gray-50/70 dark:bg-white/[0.025] py-8">
         <div className="max-w-4xl mx-auto px-5 sm:px-8 grid grid-cols-2 sm:grid-cols-4 gap-6">
           {[
             { stat: '5',       label: 'schedule types'       },
@@ -645,7 +655,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ── */}
-      <section className="bg-gray-50 dark:bg-slate-900/40 border-y border-gray-100 dark:border-slate-800/50 py-24">
+      <section className="bg-gray-50 dark:bg-white/[0.035] border-y border-gray-100 dark:border-slate-700/50 py-24">
         <div className="max-w-4xl mx-auto px-5 sm:px-8">
           <div className="text-center mb-14">
             <p className="text-xs font-bold tracking-widest text-indigo-500 uppercase mb-3">How it works</p>
@@ -661,12 +671,12 @@ export default function LandingPage() {
             />
 
             {STEPS.map(({ n, icon, title, desc }) => (
-              <div key={n} className={`relative flex flex-col items-center text-center p-7 rounded-2xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 shadow-sm step-card-${n}`}>
+              <div key={n} className={`relative flex flex-col items-center text-center p-7 rounded-2xl bg-white dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700/60 shadow-sm step-card-${n}`}>
                 {/* Step number badge */}
-                <div className="absolute top-5 right-5 w-5 h-5 rounded-full bg-indigo-600/15 dark:bg-indigo-600/20 flex items-center justify-center">
-                  <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400">{n}</span>
+                <div className="absolute top-5 right-5 w-5 h-5 rounded-full bg-indigo-600/15 dark:bg-indigo-500/25 flex items-center justify-center">
+                  <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-300">{n}</span>
                 </div>
-                <div className="w-16 h-16 rounded-2xl bg-indigo-600/8 dark:bg-indigo-600/12 flex items-center justify-center mb-5">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-600/8 dark:bg-indigo-500/20 flex items-center justify-center mb-5">
                   {n === 1 && <span className="text-3xl step-pill-icon">{icon}</span>}
                   {n === 2 && <AnimatedClockIcon />}
                   {n === 3 && <span className="text-3xl step-env-icon">{icon}</span>}
@@ -721,7 +731,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-gray-100 dark:border-slate-800/50 py-8">
+      <footer className="border-t border-gray-100 dark:border-slate-700/50 py-8">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
