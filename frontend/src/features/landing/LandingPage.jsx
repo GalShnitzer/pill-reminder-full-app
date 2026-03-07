@@ -145,35 +145,51 @@ function AnimatedClockIcon() {
 
   return (
     <svg width="44" height="44" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      {/* Bezel */}
-      <circle cx="20" cy="20" r="18.5" fill="#0f0d2e" fillOpacity="0.7" stroke="#4338ca" strokeWidth="1" />
-      {/* Face */}
-      <circle cx="20" cy="20" r="16" fill="#13103a" fillOpacity="0.9" stroke="#3730a3" strokeWidth="0.5" />
-      {/* Subtle face shine */}
-      <ellipse cx="16" cy="13" rx="7" ry="5" fill="white" fillOpacity="0.04" />
+      <defs>
+        <radialGradient id="face-grad" cx="38%" cy="32%" r="65%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+          <stop offset="100%" stopColor="#e8eaff" stopOpacity="1" />
+        </radialGradient>
+        <radialGradient id="bezel-grad" cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#6366f1" />
+          <stop offset="100%" stopColor="#3730a3" />
+        </radialGradient>
+      </defs>
 
-      {/* Tick marks */}
+      {/* Outer bezel with gradient */}
+      <circle cx="20" cy="20" r="19" fill="url(#bezel-grad)" />
+      {/* Bezel highlight ring */}
+      <circle cx="20" cy="20" r="19" fill="none" stroke="#818cf8" strokeWidth="0.5" strokeOpacity="0.5" />
+
+      {/* Light ivory face */}
+      <circle cx="20" cy="20" r="16" fill="url(#face-grad)" stroke="#c7d2fe" strokeWidth="0.5" />
+      {/* Face subtle inner shadow ring */}
+      <circle cx="20" cy="20" r="15.5" fill="none" stroke="#6366f1" strokeWidth="0.3" strokeOpacity="0.25" />
+      {/* Face gloss highlight */}
+      <ellipse cx="16.5" cy="13" rx="6" ry="4" fill="white" fillOpacity="0.35" />
+
+      {/* Tick marks on light face */}
       {ticks.map((t, i) => (
         <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2}
-          stroke={t.isMain ? '#818cf8' : '#3730a3'}
-          strokeWidth={t.isMain ? 1.5 : 0.8}
+          stroke={t.isMain ? '#3730a3' : '#a5b4fc'}
+          strokeWidth={t.isMain ? 1.8 : 0.8}
           strokeLinecap="round"
         />
       ))}
 
-      {/* Hour hand (static) — starts slightly past center for counterweight look */}
+      {/* Hour hand (static, deep indigo) */}
       <line x1={+(20 - 2.5 * Math.sin(hRad)).toFixed(2)} y1={+(20 + 2.5 * Math.cos(hRad)).toFixed(2)}
             x2={hx} y2={hy}
-            stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />
+            stroke="#312e81" strokeWidth="2.5" strokeLinecap="round" />
 
-      {/* Minute hand (spins) */}
+      {/* Minute hand (spins, indigo-600) */}
       <g className="clock-hands-group">
-        <line x1="20" y1="22.5" x2="20" y2="6" stroke="#c7d2fe" strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="20" y1="23" x2="20" y2="6" stroke="#4f46e5" strokeWidth="1.8" strokeLinecap="round" />
       </g>
 
       {/* Center jewel */}
-      <circle cx="20" cy="20" r="2.2" fill="#6366f1" stroke="#818cf8" strokeWidth="0.6" />
-      <circle cx="20" cy="20" r="0.8" fill="#e0e7ff" />
+      <circle cx="20" cy="20" r="2.5" fill="#6366f1" stroke="white" strokeWidth="0.8" />
+      <circle cx="20" cy="20" r="0.9" fill="white" fillOpacity="0.9" />
     </svg>
   );
 }
@@ -492,9 +508,9 @@ export default function LandingPage() {
           0%, 100% { opacity: 0.12; }
           50%       { opacity: 0.26; }
         }
-        .step-pill-icon { display: inline-block; animation: step-pill-spin 6s ease-in-out infinite; }
-        .clock-hands-group { transform-origin: 20px 20px; animation: step-clock-spin 6s ease-in-out infinite 2s; }
-        .step-env-icon { display: inline-block; animation: step-env-fly 6s ease-in-out infinite 4s; }
+        .step-pill-icon { display: inline-block; animation: step-pill-spin 4.5s ease-out infinite; }
+        .clock-hands-group { transform-origin: 20px 20px; animation: step-clock-spin 4.5s ease-out infinite 1.5s; }
+        .step-env-icon { display: inline-block; animation: step-env-fly 4.5s ease-out infinite 3s; }
       `}</style>
 
       {/* ── Phone step modal ── */}
