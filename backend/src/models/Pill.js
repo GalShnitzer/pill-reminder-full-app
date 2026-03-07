@@ -17,6 +17,11 @@ const pillSchema = new mongoose.Schema(
     emailEndHour: { type: String, default: '22:00' },
     color: { type: String, default: '#6366f1' },
     isActive: { type: Boolean, default: true },
+    scheduleType: { type: String, enum: ['daily', 'every_n_days', 'weekly', 'monthly'], default: 'daily' },
+    scheduleInterval: { type: Number, default: 1, min: 1, max: 365 },
+    scheduleWeekdays: { type: [Number], default: [] }, // 0=Sun ... 6=Sat
+    scheduleMonthDay: { type: Number, min: 1, max: 31, default: 1 },
+    scheduleStartDate: { type: String, default: '' }, // YYYY-MM-DD, used by every_n_days
   },
   { timestamps: true }
 );

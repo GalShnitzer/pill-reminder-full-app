@@ -4,6 +4,27 @@ const PillLog = require('../models/PillLog');
 const User = require('../models/User');
 const { sendPillReminder } = require('./email.service');
 
+// Returns true if the pill should be active on the given date string (YYYY-MM-DD)
+function isScheduledToday(pill, dateStr) {
+  const type = pill.scheduleType || 'daily';
+  if (type === 'daily') return true;
+
+  const date = new Date(dateStr + 'T12:00:00'); // noon avoids DST edge cases
+  if (type === 'weekly') {
+    return (pill.scheduleWeekdays || []).includes(date.getDay());
+  }
+  if (type === 'monthly') {
+    return date.getDate() === pill.scheduleMonthDay;
+  }
+  if (type === 'every_n_days') {
+    if (!pill.scheduleStartDate) return true;
+    const start = new Date(pill.scheduleStartDate + 'T12:00:00');
+    const diffDays = Math.round((date - start) / 86400000);
+    return diffDays >= 0 && diffDays % (pill.scheduleInterval || 1) === 0;
+  }
+  return true;
+}
+
 // Runs every 15 minutes
 function startScheduler() {
   cron.schedule('*/15 * * * *', async () => {
@@ -20,21 +41,18 @@ async function checkAndSendReminders() {
 
     for (const pill of activePills) {
       try {
-        // Get user's timezone for today's date
         const user = await User.findById(pill.userId).lean();
         if (!user) continue;
 
         const timezone = user.timezone || 'Asia/Jerusalem';
         const today = now.toLocaleDateString('en-CA', { timeZone: timezone });
 
-        // Use user's local time for hour/minute comparison
+        // Skip if this pill isn't scheduled for today
+        if (!isScheduledToday(pill, today)) continue;
+
         const localTime = now.toLocaleTimeString('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit' });
         const [currentHour, currentMinute] = localTime.split(':').map(Number);
         const currentTotalMinutes = currentHour * 60 + currentMinute;
-
-        // Check if pill already taken today
-        const alreadyTaken = await PillLog.findOne({ pillId: pill._id, date: today });
-        if (alreadyTaken) continue;
 
         // Check email window constraints
         const [startH, startM] = pill.emailStartHour.split(':').map(Number);
@@ -44,31 +62,29 @@ async function checkAndSendReminders() {
 
         if (currentTotalMinutes < startMinutes || currentTotalMinutes > endMinutes) continue;
 
-        // Check if any reminder hour falls in the current 15-min window
-        // OR if it's a frequency follow-up window
-        const shouldSend = pill.reminderHours.some((h) => {
+        // Check each reminder hour individually (per-dose logging)
+        for (const h of pill.reminderHours) {
           const [hh, mm] = h.split(':').map(Number);
           const scheduledMinutes = hh * 60 + mm;
-          // First reminder: within 15 min of scheduled time
-          if (Math.abs(scheduledMinutes - currentTotalMinutes) <= 15) return true;
-          return false;
-        });
 
-        // Frequency follow-up: after start, every frequencyMinutes, if within window
-        const minutesSinceStart = currentTotalMinutes - startMinutes;
-        const isFollowUpWindow =
-          minutesSinceStart > 0 &&
-          minutesSinceStart % pill.emailFrequencyMinutes < 15;
+          // Is this dose within the current 15-min trigger window?
+          const inWindow = Math.abs(scheduledMinutes - currentTotalMinutes) <= 15;
 
-        // Only send if a reminder hour triggered OR it's a follow-up
-        const firstReminderPassed = pill.reminderHours.some((h) => {
-          const [hh, mm] = h.split(':').map(Number);
-          return hh * 60 + mm <= currentTotalMinutes;
-        });
+          // Is this a follow-up window for this dose?
+          const minutesSinceDose = currentTotalMinutes - scheduledMinutes;
+          const isFollowUp =
+            minutesSinceDose > 0 &&
+            minutesSinceDose % pill.emailFrequencyMinutes < 15;
 
-        if (!shouldSend && !(isFollowUpWindow && firstReminderPassed)) continue;
+          if (!inWindow && !isFollowUp) continue;
 
-        await sendPillReminder({ user, pill });
+          // Check if this specific dose was already taken today
+          const doseTaken = await PillLog.findOne({ pillId: pill._id, date: today, scheduledHour: h }).lean();
+          if (doseTaken) continue;
+
+          await sendPillReminder({ user, pill });
+          break; // send at most one reminder per cron tick per pill
+        }
       } catch (err) {
         console.error(`[Scheduler] Error processing pill ${pill._id}:`, err.message);
       }

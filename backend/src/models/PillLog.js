@@ -11,8 +11,8 @@ const pillLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// One log per pill per day (upsert on mark-taken)
-pillLogSchema.index({ pillId: 1, date: 1 }, { unique: true });
+// One log per pill per day per scheduled dose
+pillLogSchema.index({ pillId: 1, date: 1, scheduledHour: 1 }, { unique: true });
 pillLogSchema.index({ userId: 1, date: 1 });
 
 module.exports = mongoose.model('PillLog', pillLogSchema);

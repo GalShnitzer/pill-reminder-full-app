@@ -12,11 +12,11 @@ export const updatePill = (id, data) =>
 export const deletePill = (id) =>
   api.delete(`/pills/${id}`).then((r) => r.data);
 
-export const takePill = (id) =>
-  api.post(`/pills/${id}/take`).then((r) => r.data);
+export const takePill = (id, scheduledHour) =>
+  api.post(`/pills/${id}/take`, { scheduledHour }).then((r) => r.data);
 
-export const untakePill = (id) =>
-  api.delete(`/pills/${id}/take`).then((r) => r.data);
+export const untakePill = (id, scheduledHour) =>
+  api.delete(`/pills/${id}/take`, { data: { scheduledHour } }).then((r) => r.data);
 
 export const getPillHistory = (id) =>
   api.get(`/pills/${id}/history`).then((r) => r.data);

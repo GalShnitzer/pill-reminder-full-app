@@ -9,6 +9,7 @@ import { getApiError } from '../../utils/helpers';
 
 import PillCard from './components/PillCard';
 import PillDetailModal from './components/PillDetailModal';
+import TodayTimeline from './components/TodayTimeline';
 import AddPillModal from '../pills/AddPillModal';
 
 function LoadingSkeleton() {
@@ -50,18 +51,18 @@ export default function DashboardPage() {
   const [selectedPill, setSelectedPill] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const handleTake = async (pill) => {
+  const handleTake = async (pill, scheduledHour) => {
     try {
-      await takePill(pill._id);
+      await takePill(pill._id, scheduledHour);
       await refetch();
     } catch (err) {
       toast.error(getApiError(err));
     }
   };
 
-  const handleUntake = async (pill) => {
+  const handleUntake = async (pill, scheduledHour) => {
     try {
-      await untakePill(pill._id);
+      await untakePill(pill._id, scheduledHour);
       await refetch();
     } catch (err) {
       toast.error(getApiError(err));
@@ -129,18 +130,29 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pills.map((pill) => (
-              <PillCard
-                key={pill._id}
-                pill={pill}
-                onTake={handleTake}
-                onUntake={handleUntake}
-                onClick={() => setSelectedPill(pill)}
-                onUpdate={refetch}
-              />
-            ))}
-          </div>
+          <>
+            {/* Today's timeline */}
+            <TodayTimeline pills={pills} onTake={handleTake} onUntake={handleUntake} />
+
+            {/* Pill cards grid */}
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400 mb-3">
+                Your Pills
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pills.map((pill) => (
+                  <PillCard
+                    key={pill._id}
+                    pill={pill}
+                    onTake={handleTake}
+                    onUntake={handleUntake}
+                    onClick={() => setSelectedPill(pill)}
+                    onUpdate={refetch}
+                  />
+                ))}
+              </div>
+            </div>
+          </>
         )}
       </div>
 

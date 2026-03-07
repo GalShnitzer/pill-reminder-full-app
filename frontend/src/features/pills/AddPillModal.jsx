@@ -22,6 +22,8 @@ const PILL_COLORS = [
   { hex: '#06b6d4', label: 'Cyan' },
 ];
 
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 const DEFAULT_FORM = {
   name: '',
   color: '#6366f1',
@@ -29,6 +31,10 @@ const DEFAULT_FORM = {
   emailStartHour: '09:00',
   emailFrequency: 120,
   emailEndHour: '22:00',
+  scheduleType: 'daily',
+  scheduleInterval: 2,
+  scheduleWeekdays: [],
+  scheduleMonthDay: 1,
 };
 
 // ---------------------------------------------------------------------------
@@ -46,8 +52,12 @@ function buildInitialForm(existingPill) {
         ? [...existingPill.reminderHours]
         : ['09:00'],
     emailStartHour: existingPill.emailStartHour ?? '09:00',
-    emailFrequency: existingPill.emailFrequency ?? 120,
+    emailFrequency: existingPill.emailFrequencyMinutes ?? 120,
     emailEndHour: existingPill.emailEndHour ?? '22:00',
+    scheduleType: existingPill.scheduleType ?? 'daily',
+    scheduleInterval: existingPill.scheduleInterval ?? 2,
+    scheduleWeekdays: existingPill.scheduleWeekdays ?? [],
+    scheduleMonthDay: existingPill.scheduleMonthDay ?? 1,
   };
 }
 
@@ -78,6 +88,10 @@ function validate(form) {
     errors.emailFrequency = 'Frequency must be between 15 and 1440 minutes.';
   }
 
+  if (form.scheduleType === 'weekly' && form.scheduleWeekdays.length === 0) {
+    errors.scheduleWeekdays = 'Select at least one day.';
+  }
+
   return errors;
 }
 
@@ -98,7 +112,6 @@ function Label({ htmlFor, children }) {
   );
 }
 
-// Trash icon SVG
 function TrashIcon({ className = 'w-4 h-4' }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -111,7 +124,6 @@ function TrashIcon({ className = 'w-4 h-4' }) {
   );
 }
 
-// Plus icon SVG
 function PlusIcon({ className = 'w-4 h-4' }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -131,7 +143,6 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  // Reset form when modal opens / existingPill changes
   useEffect(() => {
     if (isOpen) {
       setForm(buildInitialForm(existingPill));
@@ -145,7 +156,6 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
 
   function setField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
-    // Clear error for this field on change
     if (errors[key]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -153,6 +163,13 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
         return next;
       });
     }
+  }
+
+  function toggleWeekday(day) {
+    const days = form.scheduleWeekdays.includes(day)
+      ? form.scheduleWeekdays.filter((d) => d !== day)
+      : [...form.scheduleWeekdays, day];
+    setField('scheduleWeekdays', days);
   }
 
   function addReminderHour() {
@@ -207,6 +224,10 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
         emailStartHour: form.emailStartHour,
         emailFrequencyMinutes: Number(form.emailFrequency),
         emailEndHour: form.emailEndHour,
+        scheduleType: form.scheduleType,
+        scheduleInterval: Number(form.scheduleInterval),
+        scheduleWeekdays: form.scheduleWeekdays,
+        scheduleMonthDay: Number(form.scheduleMonthDay),
       };
 
       if (isEditing) {
@@ -280,7 +301,86 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
             </div>
           </div>
 
-          {/* ---- 3. Reminder hours ---- */}
+          {/* ---- 3. Schedule frequency ---- */}
+          <div>
+            <Label>How often</Label>
+            <div className="space-y-2">
+              {[
+                { value: 'daily', label: 'Every day' },
+                { value: 'every_n_days', label: 'Every N days' },
+                { value: 'weekly', label: 'Specific days of the week' },
+                { value: 'monthly', label: 'Once a month' },
+              ].map(({ value, label }) => (
+                <label key={value} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="scheduleType"
+                    value={value}
+                    checked={form.scheduleType === value}
+                    onChange={() => setField('scheduleType', value)}
+                    disabled={submitting}
+                    className="accent-indigo-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-slate-300">{label}</span>
+                </label>
+              ))}
+            </div>
+
+            {form.scheduleType === 'every_n_days' && (
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-slate-400">Every</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  className="input-field w-20"
+                  value={form.scheduleInterval}
+                  onChange={(e) => setField('scheduleInterval', Number(e.target.value))}
+                  disabled={submitting}
+                />
+                <span className="text-sm text-gray-600 dark:text-slate-400">days</span>
+              </div>
+            )}
+
+            {form.scheduleType === 'weekly' && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {WEEKDAYS.map((day, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => toggleWeekday(i)}
+                    className={`px-2.5 py-1 text-xs rounded-lg border transition-colors disabled:opacity-40 ${
+                      form.scheduleWeekdays.includes(i)
+                        ? 'bg-indigo-600 border-indigo-600 text-white'
+                        : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400 hover:border-indigo-400'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            )}
+            <FieldError message={errors.scheduleWeekdays} />
+
+            {form.scheduleType === 'monthly' && (
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-slate-400">On the</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={31}
+                  className="input-field w-20"
+                  value={form.scheduleMonthDay}
+                  onChange={(e) => setField('scheduleMonthDay', Number(e.target.value))}
+                  disabled={submitting}
+                />
+                <span className="text-sm text-gray-600 dark:text-slate-400">of each month</span>
+              </div>
+            )}
+          </div>
+
+          {/* ---- 4. Reminder hours ---- */}
           <div>
             <Label>Reminder times</Label>
 
@@ -334,7 +434,6 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
               Email reminder settings
             </p>
 
-            {/* ---- 3. Email start hour ---- */}
             <div className="space-y-4">
               <div>
                 <Label htmlFor="email-start">Start sending reminders at</Label>
@@ -349,7 +448,6 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
                 <FieldError message={errors.emailStartHour} />
               </div>
 
-              {/* ---- 4. Email frequency ---- */}
               <div>
                 <Label htmlFor="email-frequency">Re-send every X minutes</Label>
                 <input
@@ -366,7 +464,6 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
                 <FieldError message={errors.emailFrequency} />
               </div>
 
-              {/* ---- 5. Email end hour ---- */}
               <div>
                 <Label htmlFor="email-end">Stop sending reminders at</Label>
                 <input

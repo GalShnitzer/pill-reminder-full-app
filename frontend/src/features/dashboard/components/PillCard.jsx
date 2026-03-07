@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
-import { takePill, untakePill, updatePill } from '../../../services/pills.service';
+import { updatePill } from '../../../services/pills.service';
 import { formatTime, getApiError } from '../../../utils/helpers';
 
 const PILL_COLORS = [
@@ -77,11 +77,8 @@ function PillIcon({ color = '#6366f1', size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <g transform="rotate(-35, 14, 14)">
-        {/* Full pill body — width=10, rx=5 gives a perfect stadium/capsule */}
         <rect x="9" y="4" width="10" height="20" rx="5" fill={color} />
-        {/* Lower half tint — exact path tracing the bottom half of the capsule */}
         <path d="M9 14 H19 V19 A5 5 0 1 1 9 19 Z" fill="white" fillOpacity="0.22" />
-        {/* Divider line */}
         <line x1="9" y1="14" x2="19" y2="14" stroke="white" strokeWidth="1.5" strokeOpacity="0.45" />
       </g>
     </svg>
@@ -129,6 +126,18 @@ function ColorPickerPopover({ currentColor, onSelect, onClose, triggerRef }) {
   );
 }
 
+/* ---------- helpers ---------- */
+
+// Returns the "current dose" — the next upcoming dose based on local time.
+// If all doses are in the past, returns the last one.
+function getCurrentDose(doses) {
+  if (!doses || doses.length === 0) return null;
+  const now = new Date();
+  const currentTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const upcoming = doses.find((d) => d.scheduledHour >= currentTime);
+  return upcoming || doses[doses.length - 1];
+}
+
 /* ---------- component ---------- */
 
 export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) {
@@ -136,7 +145,11 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorBtnRef = useRef(null);
 
-  const { name, reminderHours = [], takenToday, takenAt, color = '#6366f1' } = pill;
+  const { name, doses = [], reminderHours = [], takenToday, color = '#6366f1' } = pill;
+
+  // Determine which dose to show on the card
+  const currentDose = getCurrentDose(doses);
+  const allTaken = takenToday;
 
   const handleColorChange = async (hex) => {
     setShowColorPicker(false);
@@ -150,11 +163,10 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
 
   const handleTake = async (e) => {
     e.stopPropagation();
-    if (loading) return;
+    if (loading || !currentDose) return;
     setLoading(true);
     try {
-      await takePill(pill._id);
-      await onTake(pill);
+      await onTake(pill, currentDose.scheduledHour);
     } catch (err) {
       toast.error(getApiError(err));
     } finally {
@@ -164,11 +176,10 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
 
   const handleUntake = async (e) => {
     e.stopPropagation();
-    if (loading) return;
+    if (loading || !currentDose) return;
     setLoading(true);
     try {
-      await untakePill(pill._id);
-      await onUntake(pill);
+      await onUntake(pill, currentDose.scheduledHour);
     } catch (err) {
       toast.error(getApiError(err));
     } finally {
@@ -217,31 +228,45 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
 
         {reminderHours.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {reminderHours.map((hour) => (
-              <span
-                key={hour}
-                className="bg-primary-600/20 text-primary-300 text-xs px-2 py-0.5 rounded-full"
-              >
-                {hour}
-              </span>
-            ))}
+            {reminderHours.map((hour) => {
+              const dose = doses.find((d) => d.scheduledHour === hour);
+              return (
+                <span
+                  key={hour}
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    dose?.taken
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-primary-600/20 text-primary-300'
+                  }`}
+                >
+                  {dose?.taken ? '✓ ' : ''}{hour}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Middle: taken status */}
+      {/* Middle: current dose status */}
       <div className="flex items-center gap-2">
-        {takenToday ? (
+        {allTaken ? (
+          <>
+            <CheckCircleIcon />
+            <span className="text-sm text-green-400 font-medium">All doses taken</span>
+          </>
+        ) : currentDose?.taken ? (
           <>
             <CheckCircleIcon />
             <span className="text-sm text-green-400 font-medium">
-              Taken at {formatTime(takenAt)}
+              {currentDose.scheduledHour} — Taken at {formatTime(currentDose.takenAt)}
             </span>
           </>
         ) : (
           <>
             <ClockIcon />
-            <span className="text-sm text-gray-400 dark:text-slate-400">Not taken yet</span>
+            <span className="text-sm text-gray-400 dark:text-slate-400">
+              {currentDose ? `Next: ${currentDose.scheduledHour}` : 'Not taken yet'}
+            </span>
           </>
         )}
       </div>
@@ -251,7 +276,39 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
         className="flex items-center gap-3 mt-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {!takenToday ? (
+        {allTaken ? (
+          <button
+            className="btn-secondary text-sm py-1.5 px-4 flex items-center gap-2"
+            onClick={handleUntake}
+            disabled={loading}
+            aria-label={`Undo last dose for ${name}`}
+          >
+            {loading ? (
+              <>
+                <SpinnerIcon />
+                <span>Undoing…</span>
+              </>
+            ) : (
+              'Undo'
+            )}
+          </button>
+        ) : currentDose?.taken ? (
+          <button
+            className="btn-secondary text-sm py-1.5 px-4 flex items-center gap-2"
+            onClick={handleUntake}
+            disabled={loading}
+            aria-label={`Undo ${currentDose.scheduledHour} dose for ${name}`}
+          >
+            {loading ? (
+              <>
+                <SpinnerIcon />
+                <span>Undoing…</span>
+              </>
+            ) : (
+              'Undo'
+            )}
+          </button>
+        ) : (
           <button
             className="btn-primary w-full flex items-center justify-center gap-2"
             onClick={handleTake}
@@ -265,22 +322,6 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
               </>
             ) : (
               'Mark as Taken'
-            )}
-          </button>
-        ) : (
-          <button
-            className="btn-secondary text-sm py-1.5 px-4 flex items-center gap-2"
-            onClick={handleUntake}
-            disabled={loading}
-            aria-label={`Undo taken for ${name}`}
-          >
-            {loading ? (
-              <>
-                <SpinnerIcon />
-                <span>Undoing…</span>
-              </>
-            ) : (
-              'Undo'
             )}
           </button>
         )}

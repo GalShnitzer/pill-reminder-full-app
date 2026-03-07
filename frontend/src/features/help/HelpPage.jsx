@@ -27,14 +27,23 @@ export default function HelpPage() {
             Pick a color from the palette — this color will show on the card as a capsule icon.
             You can change it at any time by clicking the capsule icon on the card.
           </Step>
-          <Step n={3} title="Reminder times">
-            Add one or more times you want to take this pill (up to 5). These are the times
-            the app uses to send your email reminders.
+          <Step n={3} title="How often">
+            Choose your pill's schedule:
+            <ul className="list-disc ml-4 space-y-1 mt-1">
+              <li><Strong>Every day</Strong> — taken daily (default).</li>
+              <li><Strong>Every N days</Strong> — e.g. every 2 days. The interval starts from the day you add the pill.</li>
+              <li><Strong>Specific days of the week</Strong> — toggle any combination of Sun–Sat.</li>
+              <li><Strong>Once a month</Strong> — choose the day of month (1–31).</li>
+            </ul>
           </Step>
-          <Step n={4} title="Email reminder settings">
+          <Step n={4} title="Reminder times">
+            Add one or more times you want to take this pill each scheduled day (up to 5).
+            Each time is tracked as a separate dose — you can mark and unmark them individually.
+          </Step>
+          <Step n={5} title="Email reminder settings">
             <ul className="list-disc ml-4 space-y-1 mt-1">
               <li><Strong>Start sending at</Strong> — earliest time emails will be sent.</li>
-              <li><Strong>Re-send every X minutes</Strong> — how often to repeat the reminder if the pill hasn't been marked taken (minimum 15 min).</li>
+              <li><Strong>Re-send every X minutes</Strong> — how often to repeat the reminder if a dose hasn't been marked taken (minimum 15 min).</li>
               <li><Strong>Stop sending at</Strong> — the cut-off time for reminders that day.</li>
             </ul>
           </Step>
@@ -44,13 +53,25 @@ export default function HelpPage() {
       {/* Section: Dashboard */}
       <Section title="The dashboard" emoji="🏠">
         <p className="mb-3">
-          Your dashboard shows all active pills for today. Each card displays:
+          Your dashboard has two sections:
         </p>
-        <ul className="space-y-2">
-          <Feature label="Pill name & color">The name and your chosen capsule color in the top-right corner.</Feature>
-          <Feature label="Reminder times">Badges showing when you're scheduled to take it.</Feature>
-          <Feature label="Taken status">Whether you've taken it today, and at what time.</Feature>
-          <Feature label="Mark as Taken">Tap the button to log that you've taken it right now. Tap Undo if you made a mistake.</Feature>
+        <ul className="space-y-2 mb-4">
+          <Feature label="Today's Schedule">
+            A chronological timeline of every dose across all your pills for today.
+            Past untaken doses are highlighted in red. Tap <Strong>Take</Strong> next to any entry
+            to log that specific dose, or <Strong>Undo</Strong> to reverse it.
+          </Feature>
+          <Feature label="Your Pills">
+            A grid of all active pills. Each card shows the name, color, and dose time badges
+            (green badge = that dose taken). The card button always refers to the <Strong>next
+            upcoming dose</Strong> — once marked, it automatically advances to the next one.
+          </Feature>
+        </ul>
+        <p>Each pill card also shows:</p>
+        <ul className="space-y-2 mt-2">
+          <Feature label="Reminder time badges">Color-coded: green when that dose is taken, indigo when pending.</Feature>
+          <Feature label="Current dose status">Shows "Next: HH:MM" for the upcoming dose, or "Taken at X" if done.</Feature>
+          <Feature label="Mark as Taken / Undo">Marks or unmarks the current dose. For multi-dose pills use the timeline for individual control.</Feature>
           <Feature label="Details →">Opens the full history and charts for that pill.</Feature>
         </ul>
       </Section>
@@ -93,8 +114,10 @@ export default function HelpPage() {
           <Step n={3} title="Paste your key">Enter the API key in the field and click Save. The key is encrypted before being stored.</Step>
         </Steps>
         <Note>
-          Reminders are sent based on each pill's <Strong>reminder times</Strong> and <Strong>email settings</Strong>.
-          If a pill is already marked taken, no further reminders are sent for that day.
+          Reminders are sent based on each pill's <Strong>reminder times</Strong>, <Strong>email settings</Strong>,
+          and <Strong>schedule</Strong>. Each dose is tracked independently — reminders stop for a dose once
+          you mark it taken. Pills set to "Every N days", "Weekly", or "Monthly" only send reminders on their
+          scheduled days.
         </Note>
       </Section>
 
