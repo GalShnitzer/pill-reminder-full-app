@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { googleSignIn } from '../../services/auth.service';
@@ -7,28 +7,215 @@ import { useAuth } from '../../context/AuthContext';
 import { getApiError } from '../../utils/helpers';
 import PhoneInput from '../../components/ui/PhoneInput';
 
+/* ── Static mock pill data for the preview ──────────────────────────── */
+const MOCK_PILLS = [
+  {
+    name: 'Cipralex',
+    color: '#6366f1',
+    hours: ['08:00', '20:00'],
+    takenHours: ['08:00'],
+    nextHour: '20:00',
+  },
+  {
+    name: 'Vitamin D',
+    color: '#22c55e',
+    hours: ['09:00'],
+    takenHours: ['09:00'],
+    nextHour: null,
+  },
+  {
+    name: 'Omega-3',
+    color: '#f97316',
+    hours: ['20:00'],
+    takenHours: [],
+    nextHour: '20:00',
+  },
+];
+
 const FEATURES = [
-  { emoji: '📅', title: 'Flexible schedules', desc: 'Daily, weekly, monthly, or every N days — whatever fits your routine.' },
-  { emoji: '✉️', title: 'Email reminders', desc: 'Automatic reminders sent straight to your inbox until you mark a dose taken.' },
-  { emoji: '📊', title: 'History & charts', desc: 'Track your adherence rate, streaks, and timing with per-pill charts.' },
-  { emoji: '💊', title: 'Multiple pills', desc: 'Manage all your medications in one clean dashboard.' },
-  { emoji: '🌙', title: 'Dark mode', desc: 'Full dark mode support — easy on the eyes, day or night.' },
-  { emoji: '🔒', title: 'Private & secure', desc: 'Google sign-in only. Your API keys are encrypted at rest.' },
+  {
+    emoji: '📅',
+    title: 'Flexible schedules',
+    desc: 'Daily, every N days, specific weekdays, or once a month — whatever fits your routine.',
+  },
+  {
+    emoji: '✉️',
+    title: 'Email reminders',
+    desc: 'Reminders sent straight to your inbox and repeated until you mark the dose taken.',
+  },
+  {
+    emoji: '📊',
+    title: 'History & charts',
+    desc: 'Per-pill adherence rate, streaks, and a bar chart comparing scheduled vs. actual times.',
+  },
+  {
+    emoji: '💊',
+    title: 'All your medications',
+    desc: 'Manage every pill in one dashboard with a live timeline of today\'s doses.',
+  },
 ];
 
 const STEPS = [
-  { n: 1, title: 'Add your pills', desc: 'Enter the name, color, and how often you need to take each medication.' },
-  { n: 2, title: 'Set reminder times', desc: 'Choose the times you want to be reminded and your preferred email window.' },
-  { n: 3, title: 'Get notified', desc: 'Receive email reminders that repeat until you mark the dose as taken.' },
+  { n: 1, title: 'Add your pills', desc: 'Name, color, and how often — takes under 30 seconds.' },
+  { n: 2, title: 'Set reminder times', desc: 'Pick the times you want reminders and how often to repeat them.' },
+  { n: 3, title: 'Get notified', desc: 'Email reminders arrive on schedule and stop once you log the dose.' },
 ];
 
+/* ── Google sign-in button ───────────────────────────────────────────── */
+function GoogleSignInButton({ onCredential, loading, width = 300 }) {
+  const divRef = (node) => {
+    if (!node || loading) return;
+    const render = () => {
+      if (!window.google) return;
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        callback: (res) => onCredential(res.credential),
+      });
+      window.google.accounts.id.renderButton(node, {
+        theme: 'filled_black',
+        size: 'large',
+        width,
+        text: 'continue_with',
+        shape: 'rectangular',
+      });
+    };
+    if (window.google) {
+      render();
+    } else {
+      // Script not yet loaded — add it once and re-render when ready
+      if (!document.querySelector('script[src*="accounts.google.com/gsi"]')) {
+        const s = document.createElement('script');
+        s.src = 'https://accounts.google.com/gsi/client';
+        s.async = true;
+        s.defer = true;
+        s.onload = render;
+        document.head.appendChild(s);
+      } else {
+        // Script added but not yet loaded — poll briefly
+        const id = setInterval(() => { if (window.google) { clearInterval(id); render(); } }, 100);
+      }
+    }
+  };
+  return <div ref={divRef} style={{ minHeight: 44 }} />;
+}
+
+/* ── Pill capsule SVG (same as PillCard) ─────────────────────────────── */
+function PillIcon({ color = '#6366f1', size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <g transform="rotate(-35, 14, 14)">
+        <rect x="9" y="4" width="10" height="20" rx="5" fill={color} />
+        <path d="M9 14 H19 V19 A5 5 0 1 1 9 19 Z" fill="white" fillOpacity="0.22" />
+        <line x1="9" y1="14" x2="19" y2="14" stroke="white" strokeWidth="1.5" strokeOpacity="0.45" />
+      </g>
+    </svg>
+  );
+}
+
+/* ── Static mock pill card (no interaction) ──────────────────────────── */
+function MockPillCard({ pill }) {
+  const allTaken = pill.takenHours.length === pill.hours.length;
+  return (
+    <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/60 rounded-xl p-4 flex flex-col gap-3 select-none">
+      {/* header */}
+      <div className="flex items-start justify-between gap-2">
+        <span className="font-semibold text-sm text-gray-900 dark:text-slate-100">{pill.name}</span>
+        <PillIcon color={pill.color} size={22} />
+      </div>
+      {/* hour badges */}
+      <div className="flex flex-wrap gap-1.5">
+        {pill.hours.map((h) => (
+          <span
+            key={h}
+            className={`text-xs px-2 py-0.5 rounded-full ${
+              pill.takenHours.includes(h)
+                ? 'bg-green-500/20 text-green-500 dark:text-green-400'
+                : 'bg-indigo-600/15 text-indigo-600 dark:text-indigo-300'
+            }`}
+          >
+            {pill.takenHours.includes(h) ? '✓ ' : ''}{h}
+          </span>
+        ))}
+      </div>
+      {/* status */}
+      <div className="flex items-center gap-1.5 text-xs">
+        {allTaken ? (
+          <>
+            <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-green-400 font-medium">All doses taken</span>
+          </>
+        ) : (
+          <>
+            <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-gray-400 dark:text-slate-400">Next: {pill.nextHour}</span>
+          </>
+        )}
+      </div>
+      {/* action button */}
+      <div className="mt-auto">
+        {allTaken ? (
+          <button className="btn-secondary text-xs py-1.5 px-3 pointer-events-none" tabIndex={-1}>Undo</button>
+        ) : (
+          <button className="btn-primary w-full text-xs py-1.5 pointer-events-none" tabIndex={-1}>Mark as Taken</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── App preview mockup ─────────────────────────────────────────────── */
+function AppPreview() {
+  return (
+    <div className="relative w-full max-w-sm mx-auto lg:mx-0">
+      {/* Glow behind */}
+      <div className="absolute -inset-4 bg-gradient-to-br from-indigo-500/20 to-purple-500/10 rounded-3xl blur-2xl pointer-events-none" />
+
+      {/* Browser chrome */}
+      <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200/80 dark:border-slate-700/60 bg-gray-100 dark:bg-slate-950">
+        {/* Title bar */}
+        <div className="flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700/60">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+          <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+          <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+          <div className="ml-3 flex-1 bg-gray-100 dark:bg-slate-800 rounded-md px-3 py-0.5 text-xs text-gray-400 dark:text-slate-500 text-center">
+            pillreminder.app
+          </div>
+        </div>
+
+        {/* Page content */}
+        <div className="bg-gray-100 dark:bg-slate-950 p-4 space-y-3">
+          {/* Fake page header */}
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <div className="text-sm font-bold text-gray-900 dark:text-slate-100">My Pills</div>
+              <div className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Today, Friday 7 March</div>
+            </div>
+            <div className="bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">+ Add Pill</div>
+          </div>
+
+          {/* Mock pill cards */}
+          {MOCK_PILLS.map((p) => (
+            <MockPillCard key={p.name} pill={p} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main component ─────────────────────────────────────────────────── */
 export default function LandingPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState('main'); // 'main' | 'phone'
+  const [step, setStep] = useState('main');
   const [pendingUser, setPendingUser] = useState(null);
   const [phone, setPhone] = useState('');
+  const heroRef = useRef(null);
 
   const handleCredential = async (idToken) => {
     setLoading(true);
@@ -52,9 +239,7 @@ export default function LandingPage() {
   const handlePhoneContinue = async (skip = false) => {
     setLoading(true);
     try {
-      if (!skip && phone.trim()) {
-        await updateProfile({ phone: phone.trim() });
-      }
+      if (!skip && phone.trim()) await updateProfile({ phone: phone.trim() });
       login(pendingUser);
       toast.success(`Welcome, ${pendingUser.name}!`);
       navigate('/');
@@ -65,16 +250,18 @@ export default function LandingPage() {
     }
   };
 
+  const scrollToHero = () => heroRef.current?.scrollIntoView({ behavior: 'smooth' });
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-slate-950">
 
-      {/* Phone step modal overlay */}
+      {/* Phone step modal */}
       {step === 'phone' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="glass-card p-8 w-full max-w-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card p-8 w-full max-w-md shadow-2xl">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">One last thing</h2>
             <p className="text-gray-500 dark:text-slate-400 text-sm mb-6">
-              Add your phone number (optional). You can always update this later in Settings.
+              Add your phone number (optional). You can always update this in Settings.
             </p>
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
@@ -98,68 +285,89 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* Navbar */}
+      {/* ── Navbar ── */}
       <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-gray-200/80 dark:border-slate-800/60">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">💊</span>
-            <span className="font-bold text-gray-900 dark:text-white text-lg">PillReminder</span>
+            <span className="font-bold text-gray-900 dark:text-white text-lg tracking-tight">PillReminder</span>
           </div>
-          <div className="scale-90 origin-right">
-            <GoogleSignInButton loading={loading} onCredential={handleCredential} compact />
-          </div>
+          <button
+            onClick={scrollToHero}
+            className="btn-primary text-sm py-1.5 px-4"
+          >
+            Get started
+          </button>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-700/10 via-transparent to-gray-100 dark:from-primary-700/20 dark:to-slate-950 pointer-events-none" />
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-24 pb-20 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary-600/20 border border-primary-500/30 mb-6">
-            <span className="text-4xl">💊</span>
+      {/* ── Hero ── */}
+      <section ref={heroRef} className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-transparent to-purple-600/5 dark:from-indigo-600/15 dark:to-purple-600/5 pointer-events-none" />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-16 lg:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+            {/* Left: copy */}
+            <div className="flex flex-col items-start">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-600/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-semibold mb-6">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                Free · No credit card needed
+              </div>
+              <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white leading-tight mb-4">
+                Never miss<br />a dose again
+              </h1>
+              <p className="text-base text-gray-500 dark:text-slate-400 leading-relaxed mb-8 max-w-md">
+                Track all your medications, get automatic email reminders, and build healthy habits with adherence charts and history.
+              </p>
+
+              <GoogleSignInButton loading={loading} onCredential={handleCredential} width={280} />
+
+              <p className="mt-3 text-xs text-gray-400 dark:text-slate-500">
+                Sign in with Google — no password needed.
+              </p>
+            </div>
+
+            {/* Right: app preview */}
+            <AppPreview />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white leading-tight mb-4">
-            Never miss a dose again
-          </h1>
-          <p className="text-lg text-gray-500 dark:text-slate-400 mb-10 max-w-xl mx-auto">
-            Track your pills, get email reminders, and build healthy habits — completely free.
-          </p>
-          <div className="flex justify-center">
-            <GoogleSignInButton loading={loading} onCredential={handleCredential} />
-          </div>
-          <p className="mt-4 text-xs text-gray-400 dark:text-slate-500">
-            No password needed. Sign in with your Google account.
-          </p>
         </div>
       </section>
 
-      {/* Features */}
+      {/* ── Features ── */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
-        <h2 className="text-center text-2xl font-bold text-gray-900 dark:text-white mb-2">Everything you need</h2>
-        <p className="text-center text-sm text-gray-500 dark:text-slate-400 mb-10">Simple, focused, and built around your medication routine.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Built around your routine</h2>
+          <p className="text-sm text-gray-500 dark:text-slate-400">Simple to set up, powerful enough to track every dose.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {FEATURES.map(({ emoji, title, desc }) => (
-            <div key={title} className="glass-card p-6">
-              <span className="text-3xl mb-3 block">{emoji}</span>
-              <h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-1">{title}</h3>
-              <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
+            <div key={title} className="glass-card p-6 flex gap-4">
+              <span className="text-2xl mt-0.5 shrink-0">{emoji}</span>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-1">{title}</h3>
+                <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="bg-white dark:bg-slate-900/40 border-y border-gray-200 dark:border-slate-800/60 py-16">
+      {/* ── How it works ── */}
+      <section className="bg-white dark:bg-slate-900/50 border-y border-gray-200 dark:border-slate-800/60 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <h2 className="text-center text-2xl font-bold text-gray-900 dark:text-white mb-2">How it works</h2>
-          <p className="text-center text-sm text-gray-500 dark:text-slate-400 mb-12">Up and running in under two minutes.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Up and running in minutes</h2>
+            <p className="text-sm text-gray-500 dark:text-slate-400">No setup required beyond signing in.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {/* connecting line on md+ */}
+            <div className="hidden md:block absolute top-5 left-1/6 right-1/6 h-px bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
             {STEPS.map(({ n, title, desc }) => (
-              <div key={n} className="flex flex-col items-center text-center">
-                <div className="w-12 h-12 rounded-full bg-primary-600/20 border border-primary-500/30 flex items-center justify-center mb-4">
-                  <span className="text-primary-600 dark:text-primary-400 font-bold text-lg">{n}</span>
+              <div key={n} className="flex flex-col items-center text-center relative">
+                <div className="w-10 h-10 rounded-full bg-indigo-600/15 border border-indigo-500/30 flex items-center justify-center mb-4 shrink-0">
+                  <span className="text-indigo-600 dark:text-indigo-400 font-bold text-sm">{n}</span>
                 </div>
-                <h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-2">{title}</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-2 text-sm">{title}</h3>
                 <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
               </div>
             ))}
@@ -167,59 +375,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 py-20 text-center">
-        <div className="bg-primary-600/10 dark:bg-primary-600/10 border border-primary-500/20 rounded-2xl px-8 py-12">
+      {/* ── CTA ── */}
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 py-20">
+        <div className="bg-gradient-to-br from-indigo-600/10 to-purple-600/5 dark:from-indigo-600/15 dark:to-purple-600/5 border border-indigo-500/20 rounded-2xl px-8 py-12 text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Ready to start?</h2>
-          <p className="text-gray-500 dark:text-slate-400 text-sm mb-8">
-            Join and never miss a dose again.
+          <p className="text-sm text-gray-500 dark:text-slate-400 mb-8">
+            Free forever. No credit card. Just sign in and add your first pill.
           </p>
           <div className="flex justify-center">
-            <GoogleSignInButton loading={loading} onCredential={handleCredential} />
+            <GoogleSignInButton loading={loading} onCredential={handleCredential} width={280} />
           </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ── Footer ── */}
       <footer className="border-t border-gray-200 dark:border-slate-800/60 py-6 text-center text-xs text-gray-400 dark:text-slate-500">
-        PillReminder — built to help you stay on track.
+        PillReminder — track your medications, build healthy habits.
       </footer>
-    </div>
-  );
-}
-
-// Renders the Google Identity Services button
-function GoogleSignInButton({ onCredential, loading, compact = false }) {
-  const divRef = (node) => {
-    if (!node || loading) return;
-    if (window.google) {
-      window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-        callback: (response) => {
-          onCredential(response.credential);
-        },
-      });
-      window.google.accounts.id.renderButton(node, {
-        theme: 'filled_black',
-        size: 'large',
-        width: compact ? 160 : 300,
-        text: compact ? 'signin' : 'continue_with',
-        shape: 'rectangular',
-      });
-    }
-  };
-
-  if (typeof window !== 'undefined' && !window.google) {
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-  }
-
-  return (
-    <div className="flex justify-center">
-      <div ref={divRef} style={{ minHeight: 44 }} />
     </div>
   );
 }
