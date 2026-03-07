@@ -443,7 +443,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#07090f] overflow-x-hidden">
+    <div className="min-h-screen bg-white dark:bg-[#07090f] overflow-x-clip">
 
       {/* ── Scoped styles ── */}
       <style>{`
@@ -656,7 +656,7 @@ export default function LandingPage() {
       <section className="max-w-5xl mx-auto px-5 sm:px-8 py-24">
         <div
           className="relative overflow-hidden rounded-3xl px-8 py-20 text-center"
-          style={{ background: 'linear-gradient(125deg, #1e1b4b 0%, #4f46e5 40%, #7c3aed 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #3730a3 0%, #4f46e5 45%, #7c3aed 100%)' }}
         >
           {/* Animated center glow */}
           <div
