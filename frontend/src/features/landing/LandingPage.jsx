@@ -127,21 +127,53 @@ function MockPillCard({ pill }) {
 
 /* ── Animated clock SVG (for step 2) ────────────────────────────────── */
 function AnimatedClockIcon() {
+  // 12 radial tick marks — longer at 12, 3, 6, 9
+  const ticks = Array.from({ length: 12 }, (_, i) => {
+    const isMain = i % 3 === 0;
+    const r1 = isMain ? 11.5 : 13.5;
+    const rad = (i * 30 * Math.PI) / 180;
+    return {
+      x1: 20 + r1 * Math.sin(rad), y1: 20 - r1 * Math.cos(rad),
+      x2: 20 + 15.5 * Math.sin(rad), y2: 20 - 15.5 * Math.cos(rad),
+      isMain,
+    };
+  });
+  // Hour hand — 10 o'clock (300° from 12)
+  const hRad = (300 * Math.PI) / 180;
+  const hx = +(20 + 8.5 * Math.sin(hRad)).toFixed(2);   // 12.64
+  const hy = +(20 - 8.5 * Math.cos(hRad)).toFixed(2);   // 15.75
+
   return (
     <svg width="44" height="44" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <circle cx="20" cy="20" r="17.5" stroke="#6366f1" strokeWidth="2" fill="#6366f1" fillOpacity="0.15" />
-      {/* Hour markers at 12, 3, 6, 9 */}
-      <circle cx="20" cy="4"  r="1.3" fill="#818cf8" />
-      <circle cx="36" cy="20" r="1.3" fill="#818cf8" />
-      <circle cx="20" cy="36" r="1.3" fill="#818cf8" />
-      <circle cx="4"  cy="20" r="1.3" fill="#818cf8" />
-      {/* Hour hand — static, pointing to ~10 o'clock */}
-      <line x1="20" y1="20" x2="13.1" y2="16" stroke="#a5b4fc" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Minute hand — spins via CSS */}
+      {/* Bezel */}
+      <circle cx="20" cy="20" r="18.5" fill="#0f0d2e" fillOpacity="0.7" stroke="#4338ca" strokeWidth="1" />
+      {/* Face */}
+      <circle cx="20" cy="20" r="16" fill="#13103a" fillOpacity="0.9" stroke="#3730a3" strokeWidth="0.5" />
+      {/* Subtle face shine */}
+      <ellipse cx="16" cy="13" rx="7" ry="5" fill="white" fillOpacity="0.04" />
+
+      {/* Tick marks */}
+      {ticks.map((t, i) => (
+        <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2}
+          stroke={t.isMain ? '#818cf8' : '#3730a3'}
+          strokeWidth={t.isMain ? 1.5 : 0.8}
+          strokeLinecap="round"
+        />
+      ))}
+
+      {/* Hour hand (static) — starts slightly past center for counterweight look */}
+      <line x1={+(20 - 2.5 * Math.sin(hRad)).toFixed(2)} y1={+(20 + 2.5 * Math.cos(hRad)).toFixed(2)}
+            x2={hx} y2={hy}
+            stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />
+
+      {/* Minute hand (spins) */}
       <g className="clock-hands-group">
-        <line x1="20" y1="20" x2="20" y2="6" stroke="#c7d2fe" strokeWidth="2" strokeLinecap="round" />
+        <line x1="20" y1="22.5" x2="20" y2="6" stroke="#c7d2fe" strokeWidth="1.8" strokeLinecap="round" />
       </g>
-      <circle cx="20" cy="20" r="2.5" fill="#6366f1" />
+
+      {/* Center jewel */}
+      <circle cx="20" cy="20" r="2.2" fill="#6366f1" stroke="#818cf8" strokeWidth="0.6" />
+      <circle cx="20" cy="20" r="0.8" fill="#e0e7ff" />
     </svg>
   );
 }
@@ -460,9 +492,9 @@ export default function LandingPage() {
           0%, 100% { opacity: 0.12; }
           50%       { opacity: 0.26; }
         }
-        .step-pill-icon { display: inline-block; animation: step-pill-spin 9s ease-in-out infinite; }
-        .clock-hands-group { transform-origin: 20px 20px; animation: step-clock-spin 9s ease-in-out infinite 3s; }
-        .step-env-icon { display: inline-block; animation: step-env-fly 9s ease-in-out infinite 6s; }
+        .step-pill-icon { display: inline-block; animation: step-pill-spin 6s ease-in-out infinite; }
+        .clock-hands-group { transform-origin: 20px 20px; animation: step-clock-spin 6s ease-in-out infinite 2s; }
+        .step-env-icon { display: inline-block; animation: step-env-fly 6s ease-in-out infinite 4s; }
       `}</style>
 
       {/* ── Phone step modal ── */}
@@ -526,12 +558,6 @@ export default function LandingPage() {
 
             {/* Left: copy */}
             <div className="flex flex-col items-start">
-              {/* Announcement chip */}
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-600/10 border border-indigo-200/70 dark:border-indigo-500/20 mb-8">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0" />
-                <span className="text-indigo-700 dark:text-indigo-400 text-xs font-semibold">No credit card · No setup needed</span>
-              </div>
-
               <h1 className="lh text-5xl sm:text-6xl font-extrabold text-gray-900 dark:text-white leading-[1.06] mb-6">
                 Never miss<br />
                 <span className="grad">a dose</span><br />
