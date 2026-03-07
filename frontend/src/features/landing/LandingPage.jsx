@@ -46,7 +46,7 @@ const FEATURES = [
     emoji: '📅',
     title: 'Flexible schedules',
     desc: 'Daily, every N days, specific weekdays, or once a month — whatever fits your routine.',
-    preview: null,
+    preview: 'schedule',
   },
   {
     emoji: '✉️',
@@ -64,7 +64,7 @@ const FEATURES = [
     emoji: '💊',
     title: 'All your medications',
     desc: 'Manage every pill in one dashboard with a live timeline of today\'s doses.',
-    preview: null,
+    preview: 'timeline',
   },
 ];
 
@@ -273,6 +273,66 @@ function MiniEmailPreview() {
   );
 }
 
+/* ── Schedule preview (weekday picker) ───────────────────────────────── */
+function MiniSchedulePreview() {
+  const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const selected = [1, 3, 5]; // Mon, Wed, Fri
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50 space-y-3">
+      {/* Active radio option */}
+      <div className="flex items-center gap-2 text-xs">
+        <div className="w-3.5 h-3.5 rounded-full border-2 border-indigo-500 flex items-center justify-center shrink-0">
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+        </div>
+        <span className="text-gray-700 dark:text-slate-300 font-medium">Specific days of the week</span>
+      </div>
+      {/* Day buttons */}
+      <div className="flex gap-1.5">
+        {days.map((d, i) => (
+          <div
+            key={i}
+            className={`flex-1 h-7 rounded-lg flex items-center justify-center text-xs font-semibold pointer-events-none select-none ${
+              selected.includes(i)
+                ? 'bg-indigo-600 text-white'
+                : 'border border-gray-200 dark:border-slate-600 text-gray-400 dark:text-slate-500'
+            }`}
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Timeline preview ────────────────────────────────────────────────── */
+function MiniTimelinePreview() {
+  const entries = [
+    { time: '08:00', name: 'Birth Control', color: '#ec4899', taken: true },
+    { time: '09:00', name: 'Vitamin D',     color: '#22c55e', taken: true },
+    { time: '20:00', name: 'Omega-3',       color: '#f97316', taken: false },
+    { time: '21:00', name: 'Vitamin D',     color: '#22c55e', taken: false },
+  ];
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50 space-y-2">
+      {entries.map((e, i) => (
+        <div key={i} className="flex items-center gap-2.5">
+          <span className="text-xs font-mono text-gray-400 dark:text-slate-500 w-10 shrink-0">{e.time}</span>
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: e.color }} />
+          <span className="text-xs text-gray-700 dark:text-slate-300 flex-1 truncate">{e.name}</span>
+          {e.taken ? (
+            <span className="text-xs text-green-500 font-semibold shrink-0">✓</span>
+          ) : (
+            <span className="text-[10px] text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-md font-medium pointer-events-none shrink-0">
+              Take
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ── Feature card ────────────────────────────────────────────────────── */
 function FeatureCard({ emoji, title, desc, preview }) {
   return (
@@ -284,8 +344,10 @@ function FeatureCard({ emoji, title, desc, preview }) {
           <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
         </div>
       </div>
-      {preview === 'chart' && <MiniBarChart />}
-      {preview === 'email' && <MiniEmailPreview />}
+      {preview === 'schedule' && <MiniSchedulePreview />}
+      {preview === 'chart'    && <MiniBarChart />}
+      {preview === 'email'    && <MiniEmailPreview />}
+      {preview === 'timeline' && <MiniTimelinePreview />}
     </div>
   );
 }
