@@ -606,7 +606,7 @@ export default function LandingPage() {
         <div className="orb w-[400px] h-[400px] bottom-0 right-0 bg-violet-600/8 dark:bg-violet-500/[0.14]" />
 
         <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-8 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-12 items-center">
 
             {/* Left: copy */}
             <div className="flex flex-col items-start">
