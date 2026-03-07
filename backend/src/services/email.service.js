@@ -64,4 +64,55 @@ async function sendPillReminder({ user, pill }) {
   }
 }
 
-module.exports = { sendPillReminder };
+async function sendConnectionTest({ user }) {
+  if (!user.resendApiKey) return { skipped: true };
+
+  let apiKey;
+  try {
+    apiKey = decrypt(user.resendApiKey);
+  } catch {
+    return { error: 'decryption_failed' };
+  }
+
+  const resend = new Resend(apiKey);
+  const appUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+
+  try {
+    await resend.emails.send({
+      from: 'Pill Reminder <onboarding@resend.dev>',
+      to: user.email,
+      subject: '✅ Your email is connected to PillReminder!',
+      html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: auto; padding: 32px 24px; background: #f9fafb; border-radius: 12px;">
+          <div style="background: #ffffff; border-radius: 10px; padding: 28px; border: 1px solid #e5e7eb;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+              <span style="font-size: 28px;">💊</span>
+              <h2 style="margin: 0; color: #4f46e5; font-size: 20px;">PillReminder</h2>
+            </div>
+
+            <p style="margin: 0 0 12px; color: #111827; font-size: 16px;">
+              Hi <strong>${user.name}</strong>,
+            </p>
+            <p style="margin: 0 0 20px; color: #374151; font-size: 16px;">
+              Your email is successfully connected to <strong style="color: #4f46e5;">PillReminder</strong>!
+              You'll now receive reminders whenever it's time to take your pills.
+            </p>
+
+            <a href="${appUrl}" style="display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+              Start using PillReminder →
+            </a>
+          </div>
+
+          <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">
+            <a href="${appUrl}" style="color: #6366f1; text-decoration: none;">PillReminder</a> — Never miss a dose again.
+          </p>
+        </div>
+      `,
+    });
+    return { success: true };
+  } catch (err) {
+    return { error: err.message };
+  }
+}
+
+module.exports = { sendPillReminder, sendConnectionTest };

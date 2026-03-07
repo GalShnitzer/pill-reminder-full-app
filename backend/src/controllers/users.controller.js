@@ -1,8 +1,7 @@
 const User = require('../models/User');
-const Pill = require('../models/Pill');
 const asyncHandler = require('../utils/asyncHandler');
 const { encrypt, decrypt } = require('../utils/crypto.utils');
-const { sendPillReminder } = require('../services/email.service');
+const { sendConnectionTest } = require('../services/email.service');
 
 // GET /api/users/profile
 const getProfile = asyncHandler(async (req, res) => {
@@ -65,10 +64,7 @@ const sendTestEmail = asyncHandler(async (req, res) => {
   if (!user) return res.status(404).json({ message: 'User not found' });
   if (!user.resendApiKey) return res.status(400).json({ message: 'No Resend API key configured' });
 
-  const pill = await Pill.findOne({ userId: req.userId, isActive: true }).lean();
-  const testPill = pill || { name: 'Test Pill', reminderHours: ['09:00'] };
-
-  const result = await sendPillReminder({ user, pill: testPill });
+  const result = await sendConnectionTest({ user });
   if (result.skipped || result.error) {
     return res.status(500).json({ message: result.error || 'Failed to send email' });
   }
