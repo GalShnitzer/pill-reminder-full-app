@@ -118,7 +118,7 @@ function MockPillCard({ pill }) {
       <div className="mt-0.5">
         {allTaken
           ? <div className="text-center text-xs py-1.5 px-3 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-300 dark:text-slate-600 cursor-default select-none">Undo</div>
-          : <div className="text-center text-xs py-1.5 rounded-lg bg-indigo-400/40 dark:bg-indigo-700/40 text-indigo-200 dark:text-indigo-400 cursor-default select-none">Mark as Taken</div>
+          : <div className="text-center text-xs py-1.5 rounded-lg bg-indigo-500/55 text-white/80 cursor-default select-none">Mark as Taken</div>
         }
       </div>
     </div>
@@ -132,13 +132,12 @@ function AppPreview() {
       {/* Ambient glow */}
       <div className="absolute -inset-8 bg-gradient-to-br from-indigo-500/20 to-violet-500/10 rounded-[40px] blur-3xl pointer-events-none" />
 
-      {/* 3D perspective tilt — visually signals "screenshot / promotional asset" */}
+      {/* Floating animated preview */}
       <div
-        className="relative pointer-events-none select-none"
+        className="relative pointer-events-none select-none preview-float"
         style={{
-          transform: 'perspective(1100px) rotateY(-9deg) rotateX(3deg)',
           transformOrigin: 'left center',
-          filter: 'drop-shadow(0 32px 48px rgba(0,0,0,0.35))',
+          filter: 'drop-shadow(0 28px 44px rgba(0,0,0,0.28))',
         }}
       >
         {/* "PREVIEW" badge — top-right corner of the frame */}
@@ -172,10 +171,6 @@ function AppPreview() {
         </div>
       </div>
 
-      {/* Caption — reinforces it's not interactive */}
-      <p className="text-center text-xs text-slate-400 dark:text-slate-600 mt-5 italic">
-        App preview — sign in to use the real thing
-      </p>
     </div>
   );
 }
@@ -313,11 +308,11 @@ function MiniTimelinePreview() {
 /* ── Feature card ────────────────────────────────────────────────────── */
 function FeatureCard({ emoji, title, desc, preview }) {
   return (
-    <div className="relative bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col overflow-hidden group transition-transform duration-200 hover:-translate-y-0.5">
+    <div className="feature-card relative bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col overflow-hidden group">
       {/* Hover accent stripe */}
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 to-violet-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="flex gap-4">
-        <span className="text-2xl mt-0.5 shrink-0">{emoji}</span>
+        <span className="card-emoji text-2xl mt-0.5 shrink-0">{emoji}</span>
         <div>
           <h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-1">{title}</h3>
           <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
@@ -402,6 +397,19 @@ export default function LandingPage() {
         .lh { font-family: 'Bricolage Grotesque', system-ui, sans-serif; letter-spacing: -0.025em; }
         .grad { background: linear-gradient(130deg, #818cf8 0%, #a78bfa 60%, #c084fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .orb { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(80px); }
+        @keyframes preview-float {
+          0%, 100% { transform: perspective(1100px) rotateY(-5deg) rotateX(1.5deg) translateY(0px); }
+          50%       { transform: perspective(1100px) rotateY(-5deg) rotateX(1.5deg) translateY(-14px); }
+        }
+        .preview-float { animation: preview-float 5s ease-in-out infinite; }
+        @keyframes card-rise {
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .feature-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .feature-card:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 16px 40px -8px rgba(99,102,241,0.18); }
+        .feature-card:hover .card-emoji { transform: scale(1.2) rotate(-8deg); }
+        .card-emoji { transition: transform 0.25s cubic-bezier(.34,1.56,.64,1); display: inline-block; }
       `}</style>
 
       {/* ── Phone step modal ── */}
@@ -443,7 +451,7 @@ export default function LandingPage() {
             <span className="lh font-bold text-gray-900 dark:text-white text-lg">PillReminder</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-xs text-gray-400 dark:text-slate-500 font-medium">Free forever</span>
+            <span className="hidden sm:inline text-xs text-gray-400 dark:text-slate-500 font-medium">Sign in with Google</span>
             <button
               onClick={handleGetStarted}
               className="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-semibold py-2 px-5 rounded-xl transition-colors shadow-md shadow-indigo-600/20"
@@ -468,7 +476,7 @@ export default function LandingPage() {
               {/* Announcement chip */}
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-600/10 border border-indigo-200/70 dark:border-indigo-500/20 mb-8">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0" />
-                <span className="text-indigo-700 dark:text-indigo-400 text-xs font-semibold">100% free · No credit card needed</span>
+                <span className="text-indigo-700 dark:text-indigo-400 text-xs font-semibold">No credit card · No setup needed</span>
               </div>
 
               <h1 className="lh text-5xl sm:text-6xl font-extrabold text-gray-900 dark:text-white leading-[1.06] mb-6">
@@ -485,7 +493,7 @@ export default function LandingPage() {
 
               {/* Trust signals */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-5">
-                {['🔒 End-to-end encrypted', '✉️ 3,000 emails / month free', '⚡ 2-min setup'].map((t) => (
+                {['🔒 Encrypted', '⚡ 2-min setup', '🌍 Works anywhere'].map((t) => (
                   <span key={t} className="text-xs text-gray-400 dark:text-slate-500">{t}</span>
                 ))}
               </div>
@@ -501,10 +509,10 @@ export default function LandingPage() {
       <div className="border-y border-gray-100 dark:border-slate-800/50 bg-gray-50/70 dark:bg-slate-900/30 py-8">
         <div className="max-w-4xl mx-auto px-5 sm:px-8 grid grid-cols-2 sm:grid-cols-4 gap-6">
           {[
-            { stat: 'Free',    label: 'forever'             },
-            { stat: '3,000',   label: 'emails / month'      },
-            { stat: 'AES-256', label: 'encrypted API keys'  },
-            { stat: '0',       label: 'credit cards needed' },
+            { stat: '5',       label: 'schedule types'       },
+            { stat: '∞',       label: 'medications tracked'  },
+            { stat: 'Google',  label: 'sign-in, no password' },
+            { stat: '100%',    label: 'private & encrypted'  },
           ].map(({ stat, label }) => (
             <div key={stat} className="text-center">
               <div className="lh text-xl font-extrabold text-gray-900 dark:text-white">{stat}</div>
@@ -586,7 +594,7 @@ export default function LandingPage() {
               Start tracking today
             </h2>
             <p className="text-indigo-200 text-base mb-10 max-w-md mx-auto">
-              Free forever. Add your first pill in under a minute.
+              Sign in with Google and add your first pill in under a minute.
             </p>
             <div className="flex justify-center">
               <GoogleSignInButton loading={loading} onCredential={handleCredential} width={280} />
