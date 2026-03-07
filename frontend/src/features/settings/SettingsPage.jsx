@@ -16,6 +16,7 @@ export default function SettingsPage() {
   const [testingEmail, setTestingEmail] = useState(false);
   const [phone, setPhone] = useState(user?.phone || '');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [showReplaceForm, setShowReplaceForm] = useState(false);
 
   const handleSaveKey = async (e) => {
     e.preventDefault();
@@ -25,6 +26,7 @@ export default function SettingsPage() {
       await saveResendKey(apiKey.trim());
       await refreshUser();
       setApiKey('');
+      setShowReplaceForm(false);
       toast.success('Resend API key saved securely');
     } catch (err) {
       toast.error(getApiError(err));
@@ -115,7 +117,7 @@ export default function SettingsPage() {
 
       {/* Resend API key card */}
       <section className="glass-card p-6">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <span>📧</span> Email reminders
@@ -126,7 +128,7 @@ export default function SettingsPage() {
           </div>
           <button
             onClick={() => setShowGuide(true)}
-            className="text-primary-400 hover:text-primary-300 text-sm underline underline-offset-2 transition-colors whitespace-nowrap ml-4"
+            className="text-primary-400 hover:text-primary-300 text-sm underline underline-offset-2 transition-colors whitespace-nowrap sm:ml-4 self-start"
           >
             How to get an API key?
           </button>
@@ -147,10 +149,10 @@ export default function SettingsPage() {
                 {testingEmail ? 'Sending...' : 'Send test email'}
               </button>
               <button
-                onClick={() => setShowGuide(false) || setApiKey('')}
+                onClick={() => { setShowReplaceForm((v) => !v); setApiKey(''); }}
                 className="btn-secondary text-sm"
               >
-                Replace key
+                {showReplaceForm ? 'Cancel' : 'Replace key'}
               </button>
               <button
                 onClick={handleRemoveKey}
@@ -161,13 +163,15 @@ export default function SettingsPage() {
               </button>
             </div>
             {/* Allow replacing the key */}
-            <form onSubmit={handleSaveKey} className="pt-2 border-t border-gray-200 dark:border-slate-700">
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">Replace with a new key:</p>
-              <ApiKeyInput value={apiKey} onChange={setApiKey} show={showKey} onToggle={() => setShowKey(!showKey)} />
-              <button type="submit" disabled={savingKey || !apiKey.trim()} className="btn-primary mt-3">
-                {savingKey ? 'Saving...' : 'Update key'}
-              </button>
-            </form>
+            {showReplaceForm && (
+              <form onSubmit={handleSaveKey} className="pt-2 border-t border-gray-200 dark:border-slate-700">
+                <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">Replace with a new key:</p>
+                <ApiKeyInput value={apiKey} onChange={setApiKey} show={showKey} onToggle={() => setShowKey(!showKey)} />
+                <button type="submit" disabled={savingKey || !apiKey.trim()} className="btn-primary mt-3">
+                  {savingKey ? 'Saving...' : 'Update key'}
+                </button>
+              </form>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSaveKey} className="space-y-4">
