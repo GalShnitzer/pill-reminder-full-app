@@ -146,12 +146,17 @@ function MiniHeatmap({ logMap, pillCreatedDate }) {
   );
 }
 
-// Custom dark tooltip for Recharts
-function DarkTooltip({ active, payload, label }) {
+// Adaptive tooltip for Recharts (respects class-based dark mode)
+function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
+  const dark = document.documentElement.classList.contains('dark');
   return (
-    <div className="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs shadow-xl">
-      <p className="text-slate-300 font-semibold mb-1">{label}</p>
+    <div className={`rounded-xl px-3 py-2 text-xs shadow-xl border ${
+      dark
+        ? 'bg-slate-800 border-slate-600 text-slate-300'
+        : 'bg-white border-gray-200 text-gray-700'
+    }`}>
+      <p className="font-semibold mb-1">{label}</p>
       {payload.map((entry) => (
         <p key={entry.name} style={{ color: entry.fill ?? entry.color }}>
           {entry.name}: <span className="font-bold">{decimalToHM(entry.value)}</span>
@@ -385,7 +390,7 @@ export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
                       (_, i) => yMin + i
                     ).filter((_, i) => i % 2 === 0)}
                   />
-                  <Tooltip content={<DarkTooltip />} cursor={{ fill: chartColors.cursor }} />
+                  <Tooltip content={<ChartTooltip />} cursor={{ fill: chartColors.cursor }} />
                   {/* Scheduled bar — indigo */}
                   <Bar dataKey="scheduled" name="Scheduled" maxBarSize={18} radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, index) => (
