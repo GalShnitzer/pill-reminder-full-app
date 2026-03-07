@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
-import LoginPage from './features/auth/LoginPage';
+import LandingPage from './features/landing/LandingPage';
 import DashboardPage from './features/dashboard/DashboardPage';
 import SettingsPage from './features/settings/SettingsPage';
 import HelpPage from './features/help/HelpPage';
@@ -12,7 +12,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<LandingPage />} />
           <Route
             path="/"
             element={
