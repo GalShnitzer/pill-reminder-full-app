@@ -273,34 +273,61 @@ function MiniEmailPreview() {
   );
 }
 
-/* ── Schedule preview (weekday picker) ───────────────────────────────── */
+/* ── Schedule preview (all 4 schedule types) ─────────────────────────── */
 function MiniSchedulePreview() {
   const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   const selected = [1, 3, 5]; // Mon, Wed, Fri
+
+  function Radio({ active, label, children }) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-xs">
+          <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center shrink-0 ${active ? 'border-indigo-500' : 'border-gray-300 dark:border-slate-600'}`}>
+            {active && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
+          </div>
+          <span className={`font-medium ${active ? 'text-gray-800 dark:text-slate-200' : 'text-gray-400 dark:text-slate-500'}`}>{label}</span>
+        </div>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50 space-y-3">
-      {/* Active radio option */}
-      <div className="flex items-center gap-2 text-xs">
-        <div className="w-3.5 h-3.5 rounded-full border-2 border-indigo-500 flex items-center justify-center shrink-0">
-          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+      <Radio label="Every day" active={false} />
+
+      <Radio label="Specific days of the week" active={true}>
+        <div className="flex gap-1.5 pl-5">
+          {days.map((d, i) => (
+            <div
+              key={i}
+              className={`flex-1 h-6 rounded-md flex items-center justify-center text-xs font-semibold pointer-events-none select-none ${
+                selected.includes(i)
+                  ? 'bg-indigo-600 text-white'
+                  : 'border border-gray-200 dark:border-slate-600 text-gray-400 dark:text-slate-500'
+              }`}
+            >
+              {d}
+            </div>
+          ))}
         </div>
-        <span className="text-gray-700 dark:text-slate-300 font-medium">Specific days of the week</span>
-      </div>
-      {/* Day buttons */}
-      <div className="flex gap-1.5">
-        {days.map((d, i) => (
-          <div
-            key={i}
-            className={`flex-1 h-7 rounded-lg flex items-center justify-center text-xs font-semibold pointer-events-none select-none ${
-              selected.includes(i)
-                ? 'bg-indigo-600 text-white'
-                : 'border border-gray-200 dark:border-slate-600 text-gray-400 dark:text-slate-500'
-            }`}
-          >
-            {d}
-          </div>
-        ))}
-      </div>
+      </Radio>
+
+      <Radio label="Every N days" active={false}>
+        <div className="flex items-center gap-1.5 pl-5 text-xs text-gray-400 dark:text-slate-500">
+          <span>Every</span>
+          <span className="px-2 py-0.5 rounded border border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 font-medium">3</span>
+          <span>days</span>
+        </div>
+      </Radio>
+
+      <Radio label="Once a month" active={false}>
+        <div className="flex items-center gap-1.5 pl-5 text-xs text-gray-400 dark:text-slate-500">
+          <span>On the</span>
+          <span className="px-2 py-0.5 rounded border border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 font-medium">1st</span>
+          <span>of each month</span>
+        </div>
+      </Radio>
     </div>
   );
 }
