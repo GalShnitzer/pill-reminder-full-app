@@ -88,12 +88,12 @@ export default function LoginPage() {
             <>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">One last thing</h2>
               <p className="text-gray-500 dark:text-slate-400 text-sm mb-6">
-                Optionally add your phone number. You can always update this later in Settings.
+                Add your phone number to receive SMS reminders. You can always update this later in Settings.
               </p>
 
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-                  Phone number <span className="text-gray-400 dark:text-slate-500">(optional)</span>
+                  Phone number <span className="text-gray-400 dark:text-slate-500">(optional — needed for SMS reminders)</span>
                 </label>
                 <input
                   type="tel"
