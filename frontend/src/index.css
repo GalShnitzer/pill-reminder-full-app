@@ -18,6 +18,28 @@
   }
 }
 
+/* react-phone-number-input overrides */
+.phone-input {
+  @apply flex gap-2 w-full;
+}
+.phone-input .PhoneInputCountry {
+  @apply flex items-center bg-white border border-gray-300 rounded-xl px-3
+         dark:bg-slate-800 dark:border-slate-600;
+}
+.phone-input .PhoneInputCountrySelect {
+  @apply bg-transparent text-gray-900 dark:text-slate-100 text-sm outline-none cursor-pointer;
+}
+.phone-input .PhoneInputCountrySelectArrow {
+  @apply text-gray-400 dark:text-slate-400 ml-1;
+}
+.phone-input .PhoneInputCountryIcon {
+  @apply w-6 h-4 mr-1.5 rounded-sm overflow-hidden flex-shrink-0;
+}
+.phone-input .PhoneInputCountryIcon--border {
+  box-shadow: none;
+  background-color: transparent;
+}
+
 @layer components {
   .glass-card {
     @apply bg-white border border-gray-200 rounded-2xl shadow-sm
