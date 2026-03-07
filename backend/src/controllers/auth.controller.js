@@ -5,6 +5,14 @@ const asyncHandler = require('../utils/asyncHandler');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const isDev = process.env.NODE_ENV === 'development';
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: !isDev,
+  sameSite: isDev ? 'lax' : 'strict',
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
 const googleSignIn = asyncHandler(async (req, res) => {
   const { idToken, phone, timezone } = req.body;
 
@@ -38,6 +46,7 @@ const googleSignIn = asyncHandler(async (req, res) => {
   }
 
   const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  res.cookie('token', token, COOKIE_OPTIONS);
 
   res.json({
     user: {
@@ -47,7 +56,6 @@ const googleSignIn = asyncHandler(async (req, res) => {
       phone: user.phone,
       hasResendKey: !!user.resendApiKey,
     },
-    token,
     isNewUser,
   });
 });
@@ -67,6 +75,7 @@ const getMe = asyncHandler(async (req, res) => {
 });
 
 const signOut = (req, res) => {
+  res.clearCookie('token', COOKIE_OPTIONS);
   res.json({ message: 'Signed out' });
 };
 

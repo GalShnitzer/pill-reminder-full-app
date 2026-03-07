@@ -19,14 +19,12 @@ export default function LoginPage() {
   const handleCredential = async (idToken) => {
     setLoading(true);
     try {
-      const { user, token, isNewUser } = await googleSignIn(idToken);
-      // Store token immediately so updateProfile works during phone step
-      localStorage.setItem('token', token);
+      const { user, isNewUser } = await googleSignIn(idToken);
       if (isNewUser) {
         setPendingUser(user);
         setStep('phone');
       } else {
-        login(user, token);
+        login(user);
         toast.success(`Welcome back, ${user.name}!`);
         navigate('/');
       }
@@ -44,7 +42,7 @@ export default function LoginPage() {
       if (!skip && phone.trim()) {
         await updateProfile({ phone: phone.trim() });
       }
-      login(pendingUser);  // token already in localStorage from handleCredential
+      login(pendingUser);
       toast.success(`Welcome, ${pendingUser.name}!`);
       navigate('/');
     } catch (err) {
