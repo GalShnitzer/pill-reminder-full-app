@@ -22,6 +22,8 @@ const pillSchema = new mongoose.Schema(
     scheduleWeekdays: { type: [Number], default: [] }, // 0=Sun ... 6=Sat
     scheduleMonthDay: { type: Number, min: 1, max: 31, default: 1 },
     scheduleStartDate: { type: String, default: '' }, // YYYY-MM-DD, used by every_n_days
+    startDate: { type: String, default: '' },          // YYYY-MM-DD, pill regimen start (hide before this)
+    endDate:   { type: String, default: '' },          // YYYY-MM-DD, pill regimen end (hide after this)
   },
   { timestamps: true }
 );

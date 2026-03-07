@@ -18,10 +18,17 @@ const getPills = asyncHandler(async (req, res) => {
   const pills = await Pill.find({ userId: req.userId, isActive: true }).lean();
   const today = getTodayDate(tz);
 
+  // Filter pills by date range (startDate / endDate)
+  const activePills = pills.filter((p) => {
+    if (p.startDate && today < p.startDate) return false;
+    if (p.endDate   && today > p.endDate)   return false;
+    return true;
+  });
+
   const logs = await PillLog.find({
     userId: req.userId,
     date: today,
-    pillId: { $in: pills.map((p) => p._id) },
+    pillId: { $in: activePills.map((p) => p._id) },
   }).lean();
 
   // Map: "pillId:scheduledHour" -> { takenAt }
@@ -31,7 +38,7 @@ const getPills = asyncHandler(async (req, res) => {
     doseMap[key] = { takenAt: log.takenAt };
   });
 
-  const result = pills.map((pill) => ({
+  const result = activePills.map((pill) => ({
     ...pill,
     doses: pill.reminderHours.map((h) => ({
       scheduledHour: h,
@@ -49,7 +56,10 @@ const createPill = asyncHandler(async (req, res) => {
   const {
     name, reminderHours, emailStartHour, emailFrequencyMinutes, emailEndHour, color,
     scheduleType, scheduleInterval, scheduleWeekdays, scheduleMonthDay, scheduleStartDate,
+    startDate, endDate,
   } = req.body;
+
+  const today = new Date().toLocaleDateString('en-CA');
 
   const pill = await Pill.create({
     userId: req.userId,
@@ -63,7 +73,9 @@ const createPill = asyncHandler(async (req, res) => {
     scheduleInterval: scheduleInterval || 1,
     scheduleWeekdays: scheduleWeekdays || [],
     scheduleMonthDay: scheduleMonthDay || 1,
-    scheduleStartDate: scheduleStartDate || new Date().toLocaleDateString('en-CA'),
+    scheduleStartDate: scheduleStartDate || today,
+    startDate: startDate || today,
+    endDate: endDate || '',
   });
   res.status(201).json({ pill });
 });

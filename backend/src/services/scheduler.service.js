@@ -51,6 +51,16 @@ async function checkAndSendReminders() {
         const timezone = user.timezone || 'Asia/Jerusalem';
         const today = now.toLocaleDateString('en-CA', { timeZone: timezone });
 
+        // Skip if pill hasn't started yet or has already ended
+        if (pill.startDate && today < pill.startDate) {
+          console.log(`[Scheduler] "${pill.name}": before start date (${pill.startDate}) — skipping`);
+          continue;
+        }
+        if (pill.endDate && today > pill.endDate) {
+          console.log(`[Scheduler] "${pill.name}": past end date (${pill.endDate}) — skipping`);
+          continue;
+        }
+
         // Skip if this pill isn't scheduled for today
         if (!isScheduledToday(pill, today)) {
           console.log(`[Scheduler] "${pill.name}": not scheduled today (${pill.scheduleType}) — skipping`);

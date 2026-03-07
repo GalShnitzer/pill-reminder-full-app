@@ -24,6 +24,8 @@ const PILL_COLORS = [
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const today = () => new Date().toLocaleDateString('en-CA');
+
 const DEFAULT_FORM = {
   name: '',
   color: '#6366f1',
@@ -35,6 +37,8 @@ const DEFAULT_FORM = {
   scheduleInterval: 2,
   scheduleWeekdays: [],
   scheduleMonthDay: 1,
+  startDate: today(),
+  endDate: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -58,6 +62,8 @@ function buildInitialForm(existingPill) {
     scheduleInterval: existingPill.scheduleInterval ?? 2,
     scheduleWeekdays: existingPill.scheduleWeekdays ?? [],
     scheduleMonthDay: existingPill.scheduleMonthDay ?? 1,
+    startDate: existingPill.startDate ?? today(),
+    endDate: existingPill.endDate ?? '',
   };
 }
 
@@ -90,6 +96,10 @@ function validate(form) {
 
   if (form.scheduleType === 'weekly' && form.scheduleWeekdays.length === 0) {
     errors.scheduleWeekdays = 'Select at least one day.';
+  }
+
+  if (form.endDate && form.startDate && form.endDate <= form.startDate) {
+    errors.endDate = 'End date must be after start date.';
   }
 
   return errors;
@@ -228,6 +238,8 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
         scheduleInterval: Number(form.scheduleInterval),
         scheduleWeekdays: form.scheduleWeekdays,
         scheduleMonthDay: Number(form.scheduleMonthDay),
+        startDate: form.startDate,
+        endDate: form.endDate || '',
       };
 
       if (isEditing) {
@@ -477,6 +489,46 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
                 <FieldError message={errors.emailEndHour} />
               </div>
             </div>
+          </div>
+
+          {/* ---- Duration (start / end dates) ---- */}
+          <div className="border-t border-gray-200 dark:border-slate-700/50 pt-1">
+            <p className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide font-medium mb-4">
+              Duration
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="pill-start-date">Start date</Label>
+                <input
+                  id="pill-start-date"
+                  type="date"
+                  className="input-field"
+                  value={form.startDate}
+                  onChange={(e) => setField('startDate', e.target.value)}
+                  disabled={submitting}
+                />
+              </div>
+              <div>
+                <Label htmlFor="pill-end-date">
+                  End date <span className="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
+                </Label>
+                <input
+                  id="pill-end-date"
+                  type="date"
+                  className="input-field"
+                  value={form.endDate}
+                  min={form.startDate || undefined}
+                  onChange={(e) => setField('endDate', e.target.value)}
+                  disabled={submitting}
+                />
+                <FieldError message={errors.endDate} />
+              </div>
+            </div>
+            {form.endDate && (
+              <p className="mt-2 text-xs text-gray-400 dark:text-slate-500">
+                The pill will disappear from your dashboard after {form.endDate}.
+              </p>
+            )}
           </div>
         </div>
 
