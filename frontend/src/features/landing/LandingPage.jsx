@@ -384,8 +384,9 @@ export default function LandingPage() {
   const handlePhoneContinue = async (skip = false) => {
     setLoading(true);
     try {
-      if (!skip && phone.trim()) await updateProfile({ phone: phone.trim() });
-      login(pendingUser);
+      const trimmed = phone.trim();
+      if (!skip && trimmed) await updateProfile({ phone: trimmed });
+      login({ ...pendingUser, phone: (!skip && trimmed) ? trimmed : pendingUser.phone });
       toast.success(`Welcome, ${pendingUser.name}!`);
       navigate('/');
     } catch (err) {
