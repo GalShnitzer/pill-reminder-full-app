@@ -527,15 +527,15 @@ export default function LandingPage() {
         .step-env-icon { display: inline-block; animation: step-env-fly 4.5s ease-out infinite 3s; }
         @keyframes step-card-glow {
           0%   { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-          7%   { box-shadow: 0 0 0 1.5px rgba(99,102,241,0.38), 0 6px 20px rgba(99,102,241,0.11); }
-          26%  { box-shadow: 0 0 0 1.5px rgba(99,102,241,0.38), 0 6px 20px rgba(99,102,241,0.11); }
+          7%   { box-shadow: 0 8px 24px rgba(99,102,241,0.18); }
+          26%  { box-shadow: 0 8px 24px rgba(99,102,241,0.18); }
           34%  { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
           100% { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         }
         @keyframes step-card-glow-dark {
           0%   { box-shadow: none; }
-          7%   { box-shadow: 0 0 0 1px rgba(129,140,248,0.3), 0 8px 32px rgba(99,102,241,0.22); }
-          26%  { box-shadow: 0 0 0 1px rgba(129,140,248,0.3), 0 8px 32px rgba(99,102,241,0.22); }
+          7%   { box-shadow: 0 8px 32px rgba(99,102,241,0.28); }
+          26%  { box-shadow: 0 8px 32px rgba(99,102,241,0.28); }
           34%  { box-shadow: none; }
           100% { box-shadow: none; }
         }
@@ -545,8 +545,6 @@ export default function LandingPage() {
         .dark .step-card-1 { animation: step-card-glow-dark 4.5s linear infinite; }
         .dark .step-card-2 { animation: step-card-glow-dark 4.5s linear infinite 1.5s; }
         .dark .step-card-3 { animation: step-card-glow-dark 4.5s linear infinite 3s; }
-        .connector-line { background: repeating-linear-gradient(90deg, #6366f140 0, #6366f140 6px, transparent 6px, transparent 14px); }
-        .dark .connector-line { background: repeating-linear-gradient(90deg, #6366f125 0, #6366f125 6px, transparent 6px, transparent 14px); }
       `}</style>
 
       {/* ── Phone step modal ── */}
@@ -679,9 +677,7 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative">
-            {/* Connecting dashes (desktop) */}
-            <div className="hidden md:block absolute top-[2.125rem] left-[calc(33.333%-1px)] right-[calc(33.333%-1px)] h-px connector-line" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
             {STEPS.map(({ n, icon, title, desc }) => (
               <div key={n} className={`relative flex flex-col items-center text-center p-7 rounded-2xl bg-white dark:bg-slate-800/40 border border-gray-100 dark:border-slate-700/30 shadow-sm step-card-${n}`}>
