@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { googleSignIn } from '../../services/auth.service';
@@ -7,21 +7,21 @@ import { useAuth } from '../../context/AuthContext';
 import { getApiError } from '../../utils/helpers';
 import PhoneInput from '../../components/ui/PhoneInput';
 
-/* ── Static mock pill data for the preview ──────────────────────────── */
+/* ── Mock pill data ─────────────────────────────────────────────────── */
 const MOCK_PILLS = [
   {
-    name: 'Cipralex',
-    color: '#6366f1',
-    hours: ['08:00', '20:00'],
+    name: 'Birth Control',
+    color: '#ec4899',
+    hours: ['08:00'],
     takenHours: ['08:00'],
-    nextHour: '20:00',
+    nextHour: null,
   },
   {
     name: 'Vitamin D',
     color: '#22c55e',
-    hours: ['09:00'],
+    hours: ['09:00', '21:00'],
     takenHours: ['09:00'],
-    nextHour: null,
+    nextHour: '21:00',
   },
   {
     name: 'Omega-3',
@@ -32,26 +32,39 @@ const MOCK_PILLS = [
   },
 ];
 
+/* ── Mini bar chart (adherence preview) ─────────────────────────────── */
+const BAR_DATA = [
+  { day: 'M', h: 72 }, { day: 'T', h: 85 }, { day: 'W', h: 60 },
+  { day: 'T', h: 90 }, { day: 'F', h: 78 }, { day: 'S', h: 55 }, { day: 'S', h: 88 },
+];
+// 14-day heatmap — 1 = taken, 0 = missed
+const HEATMAP = [1,1,1,0,1,1,1,1,1,0,1,1,1,1];
+
+/* ── Features ───────────────────────────────────────────────────────── */
 const FEATURES = [
   {
     emoji: '📅',
     title: 'Flexible schedules',
     desc: 'Daily, every N days, specific weekdays, or once a month — whatever fits your routine.',
+    preview: null,
   },
   {
     emoji: '✉️',
     title: 'Email reminders',
-    desc: 'Reminders sent straight to your inbox and repeated until you mark the dose taken.',
+    desc: 'Reminders arrive on schedule and keep repeating until you log the dose.',
+    preview: 'email',
   },
   {
     emoji: '📊',
     title: 'History & charts',
-    desc: 'Per-pill adherence rate, streaks, and a bar chart comparing scheduled vs. actual times.',
+    desc: 'Adherence rate, streaks, and a bar chart comparing scheduled vs. actual times.',
+    preview: 'chart',
   },
   {
     emoji: '💊',
     title: 'All your medications',
     desc: 'Manage every pill in one dashboard with a live timeline of today\'s doses.',
+    preview: null,
   },
 ];
 
@@ -63,14 +76,20 @@ const STEPS = [
 
 /* ── Google sign-in button ───────────────────────────────────────────── */
 function GoogleSignInButton({ onCredential, loading, width = 300 }) {
+  const initialized = useRef(false);
+
   const divRef = (node) => {
     if (!node || loading) return;
+
     const render = () => {
       if (!window.google) return;
-      window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-        callback: (res) => onCredential(res.credential),
-      });
+      if (!initialized.current) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          callback: (res) => onCredential(res.credential),
+        });
+        initialized.current = true;
+      }
       window.google.accounts.id.renderButton(node, {
         theme: 'filled_black',
         size: 'large',
@@ -79,27 +98,25 @@ function GoogleSignInButton({ onCredential, loading, width = 300 }) {
         shape: 'rectangular',
       });
     };
+
     if (window.google) {
       render();
+    } else if (!document.querySelector('script[src*="accounts.google.com/gsi"]')) {
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true;
+      s.defer = true;
+      s.onload = render;
+      document.head.appendChild(s);
     } else {
-      // Script not yet loaded — add it once and re-render when ready
-      if (!document.querySelector('script[src*="accounts.google.com/gsi"]')) {
-        const s = document.createElement('script');
-        s.src = 'https://accounts.google.com/gsi/client';
-        s.async = true;
-        s.defer = true;
-        s.onload = render;
-        document.head.appendChild(s);
-      } else {
-        // Script added but not yet loaded — poll briefly
-        const id = setInterval(() => { if (window.google) { clearInterval(id); render(); } }, 100);
-      }
+      const id = setInterval(() => { if (window.google) { clearInterval(id); render(); } }, 100);
     }
   };
+
   return <div ref={divRef} style={{ minHeight: 44 }} />;
 }
 
-/* ── Pill capsule SVG (same as PillCard) ─────────────────────────────── */
+/* ── Pill capsule SVG ────────────────────────────────────────────────── */
 function PillIcon({ color = '#6366f1', size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 28 28" fill="none" aria-hidden="true">
@@ -112,17 +129,15 @@ function PillIcon({ color = '#6366f1', size = 24 }) {
   );
 }
 
-/* ── Static mock pill card (no interaction) ──────────────────────────── */
+/* ── Static mock pill card ───────────────────────────────────────────── */
 function MockPillCard({ pill }) {
   const allTaken = pill.takenHours.length === pill.hours.length;
   return (
     <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/60 rounded-xl p-4 flex flex-col gap-3 select-none">
-      {/* header */}
       <div className="flex items-start justify-between gap-2">
         <span className="font-semibold text-sm text-gray-900 dark:text-slate-100">{pill.name}</span>
         <PillIcon color={pill.color} size={22} />
       </div>
-      {/* hour badges */}
       <div className="flex flex-wrap gap-1.5">
         {pill.hours.map((h) => (
           <span
@@ -137,7 +152,6 @@ function MockPillCard({ pill }) {
           </span>
         ))}
       </div>
-      {/* status */}
       <div className="flex items-center gap-1.5 text-xs">
         {allTaken ? (
           <>
@@ -155,27 +169,22 @@ function MockPillCard({ pill }) {
           </>
         )}
       </div>
-      {/* action button */}
       <div className="mt-auto">
-        {allTaken ? (
-          <button className="btn-secondary text-xs py-1.5 px-3 pointer-events-none" tabIndex={-1}>Undo</button>
-        ) : (
-          <button className="btn-primary w-full text-xs py-1.5 pointer-events-none" tabIndex={-1}>Mark as Taken</button>
-        )}
+        {allTaken
+          ? <button className="btn-secondary text-xs py-1.5 px-3 pointer-events-none" tabIndex={-1}>Undo</button>
+          : <button className="btn-primary w-full text-xs py-1.5 pointer-events-none" tabIndex={-1}>Mark as Taken</button>
+        }
       </div>
     </div>
   );
 }
 
-/* ── App preview mockup ─────────────────────────────────────────────── */
+/* ── App preview (browser frame) ────────────────────────────────────── */
 function AppPreview() {
   return (
     <div className="relative w-full max-w-sm mx-auto lg:mx-0">
-      {/* Glow behind */}
       <div className="absolute -inset-4 bg-gradient-to-br from-indigo-500/20 to-purple-500/10 rounded-3xl blur-2xl pointer-events-none" />
-
-      {/* Browser chrome */}
-      <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200/80 dark:border-slate-700/60 bg-gray-100 dark:bg-slate-950">
+      <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200/80 dark:border-slate-700/60">
         {/* Title bar */}
         <div className="flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700/60">
           <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
@@ -185,10 +194,8 @@ function AppPreview() {
             pillreminder.app
           </div>
         </div>
-
-        {/* Page content */}
+        {/* Content */}
         <div className="bg-gray-100 dark:bg-slate-950 p-4 space-y-3">
-          {/* Fake page header */}
           <div className="flex items-center justify-between mb-1">
             <div>
               <div className="text-sm font-bold text-gray-900 dark:text-slate-100">My Pills</div>
@@ -196,8 +203,6 @@ function AppPreview() {
             </div>
             <div className="bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">+ Add Pill</div>
           </div>
-
-          {/* Mock pill cards */}
           {MOCK_PILLS.map((p) => (
             <MockPillCard key={p.name} pill={p} />
           ))}
@@ -207,7 +212,69 @@ function AppPreview() {
   );
 }
 
-/* ── Main component ─────────────────────────────────────────────────── */
+/* ── Mini bar chart preview ──────────────────────────────────────────── */
+function MiniBarChart() {
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50">
+      <div className="flex items-end gap-1 h-14">
+        {BAR_DATA.map(({ day, h }, i) => (
+          <div key={i} className="flex flex-col items-center gap-1 flex-1">
+            <div
+              className="w-full rounded-t-sm bg-indigo-500/70 dark:bg-indigo-400/60 transition-all"
+              style={{ height: `${h}%` }}
+            />
+            <span className="text-gray-400 dark:text-slate-500 text-[9px] font-medium">{day}</span>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 mt-2">
+        <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500/70 shrink-0" />
+        <span className="text-xs text-gray-400 dark:text-slate-500">Adherence — last 7 days</span>
+        <span className="ml-auto text-xs font-semibold text-green-500">87%</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Mini heatmap preview ────────────────────────────────────────────── */
+function MiniEmailPreview() {
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50">
+      <div className="bg-gray-50 dark:bg-slate-800/60 rounded-xl p-3 border border-gray-200 dark:border-slate-700/40 text-xs space-y-1.5">
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400 dark:text-slate-500 w-8 shrink-0">From</span>
+          <span className="text-gray-600 dark:text-slate-300 font-medium">Pill Reminder</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400 dark:text-slate-500 w-8 shrink-0">Subj</span>
+          <span className="text-gray-700 dark:text-slate-200">⏰ Reminder: Take your Vitamin D</span>
+        </div>
+        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700/40 text-gray-500 dark:text-slate-400 leading-relaxed">
+          Hi Sarah, this is a reminder to take your <span className="font-semibold text-gray-700 dark:text-slate-200">Vitamin D</span> scheduled at 09:00.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Feature card ────────────────────────────────────────────────────── */
+function FeatureCard({ emoji, title, desc, preview }) {
+  return (
+    <div className="glass-card p-6 flex flex-col">
+      <div className="flex gap-4">
+        <span className="text-2xl mt-0.5 shrink-0">{emoji}</span>
+        <div>
+          <h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-1">{title}</h3>
+          <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
+        </div>
+      </div>
+      {preview === 'chart' && <MiniBarChart />}
+      {preview === 'email' && <MiniEmailPreview />}
+    </div>
+  );
+}
+
+/* ── Main page ───────────────────────────────────────────────────────── */
 export default function LandingPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -250,7 +317,13 @@ export default function LandingPage() {
     }
   };
 
-  const scrollToHero = () => heroRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const handleGetStarted = () => {
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.prompt();
+    } else {
+      heroRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-slate-950">
@@ -292,10 +365,7 @@ export default function LandingPage() {
             <span className="text-xl">💊</span>
             <span className="font-bold text-gray-900 dark:text-white text-lg tracking-tight">PillReminder</span>
           </div>
-          <button
-            onClick={scrollToHero}
-            className="btn-primary text-sm py-1.5 px-4"
-          >
+          <button onClick={handleGetStarted} className="btn-primary text-sm py-1.5 px-4">
             Get started
           </button>
         </div>
@@ -311,7 +381,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-start">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-600/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-semibold mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                Free · No credit card needed
+                Free
               </div>
               <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white leading-tight mb-4">
                 Never miss<br />a dose again
@@ -340,15 +410,7 @@ export default function LandingPage() {
           <p className="text-sm text-gray-500 dark:text-slate-400">Simple to set up, powerful enough to track every dose.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {FEATURES.map(({ emoji, title, desc }) => (
-            <div key={title} className="glass-card p-6 flex gap-4">
-              <span className="text-2xl mt-0.5 shrink-0">{emoji}</span>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-1">{title}</h3>
-                <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
-              </div>
-            </div>
-          ))}
+          {FEATURES.map((f) => <FeatureCard key={f.title} {...f} />)}
         </div>
       </section>
 
@@ -359,11 +421,9 @@ export default function LandingPage() {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Up and running in minutes</h2>
             <p className="text-sm text-gray-500 dark:text-slate-400">No setup required beyond signing in.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* connecting line on md+ */}
-            <div className="hidden md:block absolute top-5 left-1/6 right-1/6 h-px bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {STEPS.map(({ n, title, desc }) => (
-              <div key={n} className="flex flex-col items-center text-center relative">
+              <div key={n} className="flex flex-col items-center text-center">
                 <div className="w-10 h-10 rounded-full bg-indigo-600/15 border border-indigo-500/30 flex items-center justify-center mb-4 shrink-0">
                   <span className="text-indigo-600 dark:text-indigo-400 font-bold text-sm">{n}</span>
                 </div>
@@ -380,7 +440,7 @@ export default function LandingPage() {
         <div className="bg-gradient-to-br from-indigo-600/10 to-purple-600/5 dark:from-indigo-600/15 dark:to-purple-600/5 border border-indigo-500/20 rounded-2xl px-8 py-12 text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Ready to start?</h2>
           <p className="text-sm text-gray-500 dark:text-slate-400 mb-8">
-            Free forever. No credit card. Just sign in and add your first pill.
+            Free forever. Sign in and add your first pill in under a minute.
           </p>
           <div className="flex justify-center">
             <GoogleSignInButton loading={loading} onCredential={handleCredential} width={280} />
