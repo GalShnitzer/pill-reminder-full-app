@@ -512,13 +512,15 @@ export default function LandingPage() {
         .clock-hands-group { transform-origin: 20px 20px; animation: step-clock-spin 4.5s ease-out infinite 1.5s; }
         .step-env-icon { display: inline-block; animation: step-env-fly 4.5s ease-out infinite 3s; }
         @keyframes step-card-glow {
-          0%, 34%, 100% { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-          10%  { box-shadow: 0 0 0 1.5px rgba(99,102,241,0.4), 0 6px 20px rgba(99,102,241,0.12); }
-          33%  { box-shadow: 0 0 0 1px rgba(99,102,241,0.25), 0 3px 10px rgba(99,102,241,0.07); }
+          0%   { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+          7%   { box-shadow: 0 0 0 1.5px rgba(99,102,241,0.38), 0 6px 20px rgba(99,102,241,0.11); }
+          26%  { box-shadow: 0 0 0 1.5px rgba(99,102,241,0.38), 0 6px 20px rgba(99,102,241,0.11); }
+          34%  { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+          100% { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         }
-        .step-card-1 { animation: step-card-glow 4.5s ease-out infinite; }
-        .step-card-2 { animation: step-card-glow 4.5s ease-out infinite 1.5s; }
-        .step-card-3 { animation: step-card-glow 4.5s ease-out infinite 3s; }
+        .step-card-1 { animation: step-card-glow 4.5s linear infinite; }
+        .step-card-2 { animation: step-card-glow 4.5s linear infinite 1.5s; }
+        .step-card-3 { animation: step-card-glow 4.5s linear infinite 3s; }
       `}</style>
 
       {/* ── Phone step modal ── */}
@@ -572,16 +574,16 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section ref={heroRef} className="relative overflow-hidden">
+      <section ref={heroRef} className="relative overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col justify-center">
         {/* Background orbs */}
         <div className="orb w-[700px] h-[500px] top-[-100px] left-[-100px] bg-indigo-600/10 dark:bg-indigo-600/[0.07]" />
         <div className="orb w-[400px] h-[400px] bottom-0 right-0 bg-violet-600/8 dark:bg-violet-600/[0.06]" />
 
-        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-10 pb-14">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-12 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 
             {/* Left: copy */}
-            <div className="flex flex-col items-start lg:pt-4">
+            <div className="flex flex-col items-start">
               <h1 className="lh text-5xl sm:text-6xl font-extrabold text-gray-900 dark:text-white leading-[1.06] mb-4">
                 Never miss<br />
                 <span className="grad">a dose</span><br />
@@ -679,9 +681,10 @@ export default function LandingPage() {
       {/* ── CTA ── */}
       <section className="max-w-5xl mx-auto px-5 sm:px-8 py-24">
         <div
-          className="relative overflow-hidden rounded-3xl px-8 py-20 text-center"
-          style={{ background: 'linear-gradient(135deg, #3730a3 0%, #4f46e5 45%, #7c3aed 100%)' }}
+          className="relative overflow-hidden rounded-3xl px-8 py-20 text-center bg-[#1e1b4b]"
         >
+          {/* Main gradient — slightly transparent so base shows through */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #3730a3 0%, #4f46e5 45%, #7c3aed 100%)', opacity: 0.82 }} />
           {/* Animated center glow */}
           <div
             className="absolute inset-0 rounded-3xl"
