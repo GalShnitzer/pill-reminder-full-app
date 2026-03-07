@@ -22,7 +22,6 @@ const scheduleFields = {
   scheduleWeekdays: Joi.array().items(Joi.number().integer().min(0).max(6)),
   scheduleMonthDay: Joi.number().integer().min(1).max(31),
   scheduleStartDate: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).allow(''),
-  reminderChannels: Joi.array().items(Joi.string().valid('email', 'sms')).min(1).optional(),
 };
 
 const createPillSchema = Joi.object({

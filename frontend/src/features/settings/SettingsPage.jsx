@@ -98,7 +98,7 @@ export default function SettingsPage() {
           <form onSubmit={handleSaveProfile}>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                Phone number <span className="text-gray-400 dark:text-slate-500 font-normal">(needed for SMS reminders)</span>
+                Phone number <span className="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
               </label>
               <PhoneInput
                 value={phone}
@@ -180,34 +180,6 @@ export default function SettingsPage() {
               {savingKey ? 'Saving...' : 'Save API key'}
             </button>
           </form>
-        )}
-      </section>
-
-      {/* SMS reminders card */}
-      <section className="glass-card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <span>📱</span> SMS reminders
-        </h2>
-        {user?.hasTwilioSms ? (
-          user?.phone ? (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/30">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-green-400 text-sm font-medium">
-                SMS reminders available — phone number is set ({user.phone})
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
-              <span className="text-amber-400">⚠️</span>
-              <span className="text-amber-300 text-sm">
-                Add your phone number in the Profile section above to enable SMS reminders.
-              </span>
-            </div>
-          )
-        ) : (
-          <p className="text-sm text-gray-500 dark:text-slate-400">
-            SMS reminders are not enabled on this server. Contact the administrator to set up Twilio.
-          </p>
         )}
       </section>
 

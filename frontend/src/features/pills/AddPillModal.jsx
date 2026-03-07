@@ -4,7 +4,6 @@ import toast from 'react-hot-toast';
 import Modal from '../../components/ui/Modal';
 import { createPill, updatePill } from '../../services/pills.service';
 import { getApiError, timeToMinutes } from '../../utils/helpers';
-import { useAuth } from '../../context/AuthContext';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -36,7 +35,6 @@ const DEFAULT_FORM = {
   scheduleInterval: 2,
   scheduleWeekdays: [],
   scheduleMonthDay: 1,
-  reminderChannels: ['email'],
 };
 
 // ---------------------------------------------------------------------------
@@ -60,7 +58,6 @@ function buildInitialForm(existingPill) {
     scheduleInterval: existingPill.scheduleInterval ?? 2,
     scheduleWeekdays: existingPill.scheduleWeekdays ?? [],
     scheduleMonthDay: existingPill.scheduleMonthDay ?? 1,
-    reminderChannels: existingPill.reminderChannels ?? ['email'],
   };
 }
 
@@ -77,10 +74,6 @@ function validate(form) {
 
   if (!form.reminderHours.length) {
     errors.reminderHours = 'At least one reminder hour is required.';
-  }
-
-  if (!form.reminderChannels.length) {
-    errors.reminderChannels = 'Select at least one reminder channel.';
   }
 
   if (
@@ -139,46 +132,12 @@ function PlusIcon({ className = 'w-4 h-4' }) {
   );
 }
 
-function ChannelCheckbox({ id, label, icon, checked, disabled, disabledReason, onChange }) {
-  return (
-    <div className="relative group">
-      <label
-        htmlFor={id}
-        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors cursor-pointer ${
-          disabled
-            ? 'opacity-50 cursor-not-allowed border-gray-200 dark:border-slate-700'
-            : checked
-            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10'
-            : 'border-gray-200 dark:border-slate-700 hover:border-indigo-400'
-        }`}
-      >
-        <input
-          id={id}
-          type="checkbox"
-          checked={checked}
-          disabled={disabled}
-          onChange={(e) => onChange(e.target.checked)}
-          className="accent-indigo-500 w-4 h-4 flex-shrink-0"
-        />
-        <span className="text-lg" aria-hidden="true">{icon}</span>
-        <span className="text-sm font-medium text-gray-700 dark:text-slate-300">{label}</span>
-        {disabled && (
-          <span className="ml-auto text-xs text-gray-400 dark:text-slate-500 italic truncate max-w-[140px]">
-            {disabledReason}
-          </span>
-        )}
-      </label>
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
 export default function AddPillModal({ isOpen, onClose, onCreated, existingPill }) {
   const isEditing = Boolean(existingPill);
-  const { user } = useAuth();
 
   const [form, setForm] = useState(buildInitialForm(existingPill));
   const [errors, setErrors] = useState({});
@@ -190,15 +149,6 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
       setErrors({});
     }
   }, [isOpen, existingPill]);
-
-  // ---------------------------------------------------------------------------
-  // Channel availability
-  // ---------------------------------------------------------------------------
-  const emailAvailable = !!user?.hasResendKey;
-  const smsAvailable = !!(user?.hasTwilioSms && user?.phone);
-  const smsDisabledReason = !user?.hasTwilioSms
-    ? 'SMS not configured on this server'
-    : 'No phone number — go to Settings';
 
   // ---------------------------------------------------------------------------
   // Field handlers
@@ -213,13 +163,6 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
         return next;
       });
     }
-  }
-
-  function toggleChannel(channel, checked) {
-    const channels = checked
-      ? [...form.reminderChannels, channel]
-      : form.reminderChannels.filter((c) => c !== channel);
-    setField('reminderChannels', channels);
   }
 
   function toggleWeekday(day) {
@@ -285,7 +228,6 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
         scheduleInterval: Number(form.scheduleInterval),
         scheduleWeekdays: form.scheduleWeekdays,
         scheduleMonthDay: Number(form.scheduleMonthDay),
-        reminderChannels: form.reminderChannels,
       };
 
       if (isEditing) {
@@ -486,36 +428,10 @@ export default function AddPillModal({ isOpen, onClose, onCreated, existingPill 
             )}
           </div>
 
-          {/* ---- 5. Reminder channels ---- */}
-          <div>
-            <Label>Send reminders via</Label>
-            <div className="space-y-2">
-              <ChannelCheckbox
-                id="ch-email"
-                label="Email"
-                icon="📧"
-                checked={form.reminderChannels.includes('email')}
-                disabled={!emailAvailable || submitting}
-                disabledReason="No Resend API key — go to Settings"
-                onChange={(checked) => toggleChannel('email', checked)}
-              />
-              <ChannelCheckbox
-                id="ch-sms"
-                label="SMS"
-                icon="📱"
-                checked={form.reminderChannels.includes('sms')}
-                disabled={!smsAvailable || submitting}
-                disabledReason={smsDisabledReason}
-                onChange={(checked) => toggleChannel('sms', checked)}
-              />
-            </div>
-            <FieldError message={errors.reminderChannels} />
-          </div>
-
           {/* ---- Divider ---- */}
           <div className="border-t border-gray-200 dark:border-slate-700/50 pt-1">
             <p className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide font-medium mb-4">
-              Reminder window
+              Email reminder settings
             </p>
 
             <div className="space-y-4">

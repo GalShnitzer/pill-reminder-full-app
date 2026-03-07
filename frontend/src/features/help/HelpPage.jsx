@@ -40,15 +40,7 @@ export default function HelpPage() {
             Add one or more times you want to take this pill each scheduled day (up to 5).
             Each time is tracked as a separate dose — you can mark and unmark them individually.
           </Step>
-          <Step n={5} title="Reminder channels">
-            Choose how you want to receive reminders — <Strong>Email</Strong>, <Strong>SMS</Strong>, or both.
-            <ul className="list-disc ml-4 space-y-1 mt-1">
-              <li><Strong>Email</Strong> — requires a Resend API key in Settings.</li>
-              <li><Strong>SMS</Strong> — requires SMS to be enabled on the server and a phone number in Settings.</li>
-            </ul>
-            Unavailable channels are greyed out with a reason shown.
-          </Step>
-          <Step n={6} title="Reminder window">
+          <Step n={5} title="Reminder window">
             <ul className="list-disc ml-4 space-y-1 mt-1">
               <li><Strong>Start sending at</Strong> — earliest time reminders will be sent.</li>
               <li><Strong>Re-send every X minutes</Strong> — how often to repeat the reminder if a dose hasn't been marked taken (minimum 15 min).</li>
