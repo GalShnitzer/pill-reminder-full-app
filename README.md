@@ -78,6 +78,8 @@ pill-reminder-full-app/
 | Backend | [Render](https://render.com) | Free tier + UptimeRobot keep-alive |
 | Database | [MongoDB Atlas](https://www.mongodb.com/atlas) | Free M0 cluster |
 
+**Auth architecture:** Vercel proxies all `/api/*` requests to Render server-side. The browser only ever talks to `vercel.app`, so JWT tokens are stored in secure `httpOnly; SameSite=Strict` cookies — never exposed to JavaScript.
+
 The backend is kept alive 24/7 using [UptimeRobot](https://uptimerobot.com) pinging the `/health` endpoint every 5 minutes, ensuring scheduled email reminders never miss a beat.
 
 ---
@@ -129,11 +131,13 @@ CLIENT_URL=http://localhost:5173
 NODE_ENV=development
 ```
 
-**frontend/.env**
+**frontend/.env** (local development only)
 ```
 VITE_API_URL=http://localhost:5000/api
 VITE_GOOGLE_CLIENT_ID=your_google_client_id
 ```
+
+> **Production (Vercel):** Set `VITE_API_URL=/api` — requests are proxied to Render via `vercel.json`.
 
 ---
 
