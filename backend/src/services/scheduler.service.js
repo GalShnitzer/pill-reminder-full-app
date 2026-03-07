@@ -38,55 +38,80 @@ async function checkAndSendReminders() {
 
   try {
     const activePills = await Pill.find({ isActive: true }).lean();
+    console.log(`[Scheduler] Tick — ${activePills.length} active pill(s)`);
 
     for (const pill of activePills) {
       try {
         const user = await User.findById(pill.userId).lean();
-        if (!user) continue;
+        if (!user) {
+          console.log(`[Scheduler] "${pill.name}": no user found — skipping`);
+          continue;
+        }
 
         const timezone = user.timezone || 'Asia/Jerusalem';
         const today = now.toLocaleDateString('en-CA', { timeZone: timezone });
 
         // Skip if this pill isn't scheduled for today
-        if (!isScheduledToday(pill, today)) continue;
+        if (!isScheduledToday(pill, today)) {
+          console.log(`[Scheduler] "${pill.name}": not scheduled today (${pill.scheduleType}) — skipping`);
+          continue;
+        }
 
         const localTime = now.toLocaleTimeString('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit' });
         const [currentHour, currentMinute] = localTime.split(':').map(Number);
         const currentTotalMinutes = currentHour * 60 + currentMinute;
 
-        // Check email window constraints
-        const [startH, startM] = pill.emailStartHour.split(':').map(Number);
-        const [endH, endM] = pill.emailEndHour.split(':').map(Number);
+        // Check email window constraints (null-safe defaults)
+        const emailStart = pill.emailStartHour || '09:00';
+        const emailEnd = pill.emailEndHour || '22:00';
+        const [startH, startM] = emailStart.split(':').map(Number);
+        const [endH, endM] = emailEnd.split(':').map(Number);
         const startMinutes = startH * 60 + startM;
         const endMinutes = endH * 60 + endM;
 
-        if (currentTotalMinutes < startMinutes || currentTotalMinutes > endMinutes) continue;
+        if (currentTotalMinutes < startMinutes || currentTotalMinutes > endMinutes) {
+          console.log(`[Scheduler] "${pill.name}": outside email window (${emailStart}–${emailEnd}, now=${localTime}) — skipping`);
+          continue;
+        }
 
         // Check each reminder hour individually (per-dose logging)
+        let sentForPill = false;
         for (const h of pill.reminderHours) {
           const [hh, mm] = h.split(':').map(Number);
           const scheduledMinutes = hh * 60 + mm;
 
-          // Is this dose within the current 15-min trigger window?
-          const inWindow = Math.abs(scheduledMinutes - currentTotalMinutes) <= 15;
-
-          // Is this a follow-up window for this dose?
+          // Minutes elapsed since the scheduled dose time (negative = not yet reached)
           const minutesSinceDose = currentTotalMinutes - scheduledMinutes;
+
+          // Initial trigger: only fire in the [0, 15) window after the scheduled time
+          const inWindow = minutesSinceDose >= 0 && minutesSinceDose < 15;
+
+          // Follow-up: re-send every emailFrequencyMinutes after the initial window
           const isFollowUp =
-            minutesSinceDose > 0 &&
+            minutesSinceDose >= 15 &&
             minutesSinceDose % pill.emailFrequencyMinutes < 15;
+
+          console.log(`[Scheduler] "${pill.name}" dose ${h}: offset=${minutesSinceDose}min inWindow=${inWindow} isFollowUp=${isFollowUp}`);
 
           if (!inWindow && !isFollowUp) continue;
 
           // Check if this specific dose was already taken today
           const doseTaken = await PillLog.findOne({ pillId: pill._id, date: today, scheduledHour: h }).lean();
-          if (doseTaken) continue;
+          if (doseTaken) {
+            console.log(`[Scheduler] "${pill.name}" dose ${h}: already taken — skipping`);
+            continue;
+          }
 
           await sendPillReminder({ user, pill });
+          sentForPill = true;
           break; // send at most one reminder per cron tick per pill
         }
+
+        if (!sentForPill) {
+          console.log(`[Scheduler] "${pill.name}": no reminder sent this tick`);
+        }
       } catch (err) {
-        console.error(`[Scheduler] Error processing pill ${pill._id}:`, err.message);
+        console.error(`[Scheduler] Error processing pill "${pill.name}" (${pill._id}):`, err.message);
       }
     }
   } catch (err) {
