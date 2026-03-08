@@ -6,6 +6,10 @@
 
 ---
 
+![App Demo](app-demo.gif)
+
+---
+
 ## Features
 
 - **Google Sign-In** — one-click authentication, no passwords
