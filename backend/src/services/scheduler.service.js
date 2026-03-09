@@ -3,27 +3,7 @@ const Pill = require('../models/Pill');
 const PillLog = require('../models/PillLog');
 const User = require('../models/User');
 const { sendPillReminder } = require('./email.service');
-
-// Returns true if the pill should be active on the given date string (YYYY-MM-DD)
-function isScheduledToday(pill, dateStr) {
-  const type = pill.scheduleType || 'daily';
-  if (type === 'daily') return true;
-
-  const date = new Date(dateStr + 'T12:00:00'); // noon avoids DST edge cases
-  if (type === 'weekly') {
-    return (pill.scheduleWeekdays || []).includes(date.getDay());
-  }
-  if (type === 'monthly') {
-    return date.getDate() === pill.scheduleMonthDay;
-  }
-  if (type === 'every_n_days') {
-    if (!pill.scheduleStartDate) return true;
-    const start = new Date(pill.scheduleStartDate + 'T12:00:00');
-    const diffDays = Math.round((date - start) / 86400000);
-    return diffDays >= 0 && diffDays % (pill.scheduleInterval || 1) === 0;
-  }
-  return true;
-}
+const { isScheduledOnDate } = require('../utils/scheduleUtils');
 
 // Runs every 15 minutes
 function startScheduler() {
@@ -62,7 +42,7 @@ async function checkAndSendReminders() {
         }
 
         // Skip if this pill isn't scheduled for today
-        if (!isScheduledToday(pill, today)) {
+        if (!isScheduledOnDate(pill, today)) {
           console.log(`[Scheduler] "${pill.name}": not scheduled today (${pill.scheduleType}) — skipping`);
           continue;
         }

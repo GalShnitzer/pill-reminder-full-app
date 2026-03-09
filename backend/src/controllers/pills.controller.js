@@ -2,6 +2,7 @@ const Pill = require('../models/Pill');
 const PillLog = require('../models/PillLog');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
+const { isScheduledOnDate, getLastScheduledDateBefore, computeStreak } = require('../utils/scheduleUtils');
 
 const getTodayDate = (timezone = 'UTC') => {
   return new Date().toLocaleDateString('en-CA', { timeZone: timezone });
@@ -25,47 +26,29 @@ const getPills = asyncHandler(async (req, res) => {
     return true;
   });
 
-  // Build last-30-days date list for streak computation
-  const last30 = [];
-  for (let i = 0; i < 30; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    last30.push(d.toLocaleDateString('en-CA', { timeZone: tz }));
-  }
-  const thirtyDaysAgo = last30[last30.length - 1];
-
   const pillIds = activePills.map((p) => p._id);
 
-  // Single query: today's logs + last 30 days logs
-  const allLogs = await PillLog.find({
+  // Single query: today's logs only (for dose status)
+  const todayLogs = await PillLog.find({
     userId: req.userId,
-    date: { $gte: thirtyDaysAgo, $lte: today },
+    date: today,
     pillId: { $in: pillIds },
   }).lean();
 
-  // Map: "pillId:scheduledHour" -> { takenAt }  (today only)
+  // Map: "pillId:scheduledHour" -> { takenAt }
   const doseMap = {};
-  // Map: pillId -> Set<date>  (any dose taken that day)
-  const takenDatesMap = {};
-  allLogs.forEach((log) => {
-    if (log.date === today) {
-      const key = `${log.pillId}:${log.scheduledHour}`;
-      doseMap[key] = { takenAt: log.takenAt };
-    }
-    const pid = String(log.pillId);
-    if (!takenDatesMap[pid]) takenDatesMap[pid] = new Set();
-    takenDatesMap[pid].add(log.date);
+  todayLogs.forEach((log) => {
+    const key = `${log.pillId}:${log.scheduledHour}`;
+    doseMap[key] = { takenAt: log.takenAt };
   });
 
   const result = activePills.map((pill) => {
-    // Streak: consecutive days ending today with at least one dose logged
-    const pid = String(pill._id);
-    const taken = takenDatesMap[pid] || new Set();
-    let streak = 0;
-    for (const date of last30) {
-      if (taken.has(date)) streak++;
-      else break;
-    }
+    // Streak validity check — pure date math, zero extra DB queries
+    const lastScheduled = getLastScheduledDateBefore(pill, today);
+    const effectiveStreak =
+      lastScheduled && lastScheduled > (pill.streakAnchorDate || '')
+        ? 0  // missed a scheduled day since last anchor
+        : (pill.streak || 0);
 
     return {
       ...pill,
@@ -75,7 +58,7 @@ const getPills = asyncHandler(async (req, res) => {
         takenAt: doseMap[`${pill._id}:${h}`]?.takenAt || null,
       })),
       takenToday: pill.reminderHours.every((h) => !!doseMap[`${pill._id}:${h}`]),
-      streak,
+      streak: effectiveStreak,
     };
   });
 
@@ -113,9 +96,18 @@ const createPill = asyncHandler(async (req, res) => {
 
 // PATCH /api/pills/:id — update pill
 const updatePill = asyncHandler(async (req, res) => {
+  const scheduleFields = ['scheduleType', 'scheduleWeekdays', 'scheduleInterval', 'scheduleMonthDay', 'scheduleStartDate'];
+  const scheduleChanged = scheduleFields.some((f) => f in req.body);
+
+  const updateData = { ...req.body };
+  if (scheduleChanged) {
+    updateData.streak = 0;
+    updateData.streakAnchorDate = '';
+  }
+
   const pill = await Pill.findOneAndUpdate(
     { _id: req.params.id, userId: req.userId },
-    { $set: req.body },
+    { $set: updateData },
     { new: true, runValidators: true }
   );
   if (!pill) return res.status(404).json({ message: 'Pill not found' });
@@ -162,6 +154,10 @@ const takePill = asyncHandler(async (req, res) => {
     { upsert: true, new: true }
   );
 
+  // Recompute and cache streak
+  const newStreak = await computeStreak(pill, today, PillLog);
+  await Pill.findByIdAndUpdate(pill._id, { streak: newStreak, streakAnchorDate: today });
+
   res.json({ log });
 });
 
@@ -171,11 +167,20 @@ const untakePill = asyncHandler(async (req, res) => {
   const today = getTodayDate(tz);
   const { scheduledHour } = req.body;
 
+  const pill = await Pill.findOne({ _id: req.params.id, userId: req.userId });
+  if (!pill) return res.status(404).json({ message: 'Pill not found' });
+
   if (scheduledHour) {
     await PillLog.findOneAndDelete({ pillId: req.params.id, userId: req.userId, date: today, scheduledHour });
   } else {
     await PillLog.deleteMany({ pillId: req.params.id, userId: req.userId, date: today });
   }
+
+  // Recompute and cache streak after untake
+  const newStreak = await computeStreak(pill, today, PillLog);
+  const newAnchor = newStreak > 0 ? today : (getLastScheduledDateBefore(pill, today) || '');
+  await Pill.findByIdAndUpdate(pill._id, { streak: newStreak, streakAnchorDate: newAnchor });
+
   res.json({ message: 'Unmarked' });
 });
 
@@ -213,9 +218,11 @@ const getPillHistory = asyncHandler(async (req, res) => {
     const dateStr = cursor.toLocaleDateString('en-CA', { timeZone: tz });
     if (dateStr < fromDate) break;
     const dayLogs = logMap[dateStr] || [];
+    const scheduled = isScheduledOnDate(pill, dateStr);
     calendar.push({
       date: dateStr,
-      taken: dayLogs.length > 0,
+      scheduled,
+      taken: scheduled && dayLogs.length > 0,
       doses: pill.reminderHours.map((h) => {
         const doseLog = dayLogs.find((l) => l.scheduledHour === h);
         return { scheduledHour: h, taken: !!doseLog, takenAt: doseLog?.takenAt || null };

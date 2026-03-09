@@ -24,6 +24,8 @@ const pillSchema = new mongoose.Schema(
     scheduleStartDate: { type: String, default: '' }, // YYYY-MM-DD, used by every_n_days
     startDate: { type: String, default: '' },          // YYYY-MM-DD, pill regimen start (hide before this)
     endDate:   { type: String, default: '' },          // YYYY-MM-DD, pill regimen end (hide after this)
+    streak: { type: Number, default: 0 },
+    streakAnchorDate: { type: String, default: '' },   // YYYY-MM-DD, last scheduled date confirmed taken
   },
   { timestamps: true }
 );

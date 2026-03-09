@@ -122,14 +122,23 @@ function MiniHeatmap({ logMap, pillCreatedDate }) {
       <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(7, 1.75rem)' }}>
         {cells.map((date, i) => {
           if (!date) return <div key={`pad-${i}`} className="w-7 h-7 opacity-0" />;
-          const taken = logMap[date]?.taken;
+          const entry = logMap[date];
+          const scheduled = entry?.scheduled !== false; // default true for backward compat
+          const taken = entry?.taken;
+          let colorClass = 'bg-gray-100 dark:bg-slate-800/50'; // not scheduled
+          let titleText = `${date}: Not scheduled`;
+          if (scheduled && taken) {
+            colorClass = 'bg-indigo-500';
+            titleText = `${date}: ✓ Taken`;
+          } else if (scheduled && !taken) {
+            colorClass = 'bg-red-400/60 dark:bg-red-500/40';
+            titleText = `${date}: ✗ Missed`;
+          }
           return (
             <div
               key={date}
-              title={`${date}: ${taken ? '✓ Taken' : '✗ Missed'}`}
-              className={`w-7 h-7 rounded-sm ${
-                taken ? 'bg-indigo-500' : 'bg-gray-200 dark:bg-slate-700'
-              }`}
+              title={titleText}
+              className={`w-7 h-7 rounded-sm ${colorClass}`}
             />
           );
         })}
@@ -139,7 +148,10 @@ function MiniHeatmap({ logMap, pillCreatedDate }) {
           <span className="inline-block w-3 h-3 rounded-sm bg-indigo-500" /> Taken
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-sm bg-gray-200 dark:bg-slate-700" /> Missed
+          <span className="inline-block w-3 h-3 rounded-sm bg-red-400/60 dark:bg-red-500/40" /> Missed
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded-sm bg-gray-100 dark:bg-slate-800/50" /> Not scheduled
         </span>
       </div>
     </div>
@@ -224,19 +236,24 @@ export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
   // Only count days since the pill was created (within last 30 days)
   const allDays30 = lastNDays(30).filter((d) => !pillCreatedDate || d >= pillCreatedDate);
 
-  // Current streak: count consecutive days (ending today, going back) that were taken
+  // Current streak: count consecutive scheduled days (ending today, going back) that were taken
+  // Non-scheduled days are skipped; a scheduled day with no log breaks the streak
   let streak = 0;
   for (let i = allDays30.length - 1; i >= 0; i--) {
-    if (logMap[allDays30[i]]?.taken) {
+    const entry = logMap[allDays30[i]];
+    const scheduled = entry?.scheduled !== false; // default true for backward compat
+    if (!scheduled) continue; // skip non-scheduled days
+    if (entry?.taken) {
       streak++;
     } else {
       break;
     }
   }
 
-  // Rate since creation (or last 30 days)
-  const takenCount30 = allDays30.filter((d) => logMap[d]?.taken).length;
-  const totalDays = allDays30.length;
+  // Adherence rate: only count scheduled days in denominator
+  const scheduledDays30 = allDays30.filter((d) => logMap[d]?.scheduled !== false);
+  const takenCount30 = scheduledDays30.filter((d) => logMap[d]?.taken).length;
+  const totalDays = scheduledDays30.length;
   const rate30 = totalDays > 0 ? Math.round((takenCount30 / totalDays) * 100) : 0;
   const rateLabel = totalDays < 30 ? `${totalDays}-day rate` : '30-day rate';
 
