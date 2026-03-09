@@ -71,6 +71,7 @@ export default function HelpPage() {
         <ul className="space-y-2 mt-2">
           <Feature label="Reminder time badges">Color-coded: green when that dose is taken, indigo when pending.</Feature>
           <Feature label="Current dose status">Shows "Next: HH:MM" for the upcoming dose, or "Taken at X" if done.</Feature>
+          <Feature label="🔥 streak badge">Shows how many consecutive scheduled days you've taken the pill. Appears once you hit a 2-day streak and is always calculated based on your schedule — off-days don't count against you.</Feature>
           <Feature label="Mark as Taken / Undo">Marks or unmarks the current dose. For multi-dose pills use the timeline for individual control.</Feature>
           <Feature label="Details →">Opens the full history and charts for that pill.</Feature>
         </ul>
@@ -93,9 +94,9 @@ export default function HelpPage() {
         </p>
         <ul className="space-y-2">
           <Feature label="Adherence rate">Percentage of days you took the pill since you added it (up to 30 days).</Feature>
-          <Feature label="Streak">How many consecutive days you've taken it.</Feature>
+          <Feature label="Streak">How many consecutive <Strong>scheduled</Strong> days you've taken it. Non-scheduled days (e.g. off-days for a weekly pill) are skipped and never break the streak. A 🔥 badge on the pill card appears once you reach 2+ days.</Feature>
           <Feature label="Bar chart">Compares the time you actually took the pill vs. the scheduled time, day by day.</Feature>
-          <Feature label="Heatmap calendar">A 30-day grid — filled squares mean taken, empty means missed. Only shows days since the pill was added.</Feature>
+          <Feature label="Heatmap calendar">A 30-day grid — <Strong>indigo</Strong> = taken, <Strong>red</Strong> = missed scheduled dose, <Strong>gray</Strong> = not a scheduled day (doesn't count against you). Only shows days since the pill was added.</Feature>
           <Feature label="History log">A list of every dose with the exact date and time.</Feature>
         </ul>
         <Note>Days before you added a pill are never shown as "missed" — the history starts from your creation date.</Note>

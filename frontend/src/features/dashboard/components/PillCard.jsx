@@ -208,8 +208,8 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
               {name}
             </span>
             {streak >= 2 && (
-              <span className="shrink-0 text-[11px] font-medium text-amber-500/80 dark:text-amber-400/60 tabular-nums select-none">
-                · {streak}d
+              <span className="shrink-0 text-[11px] font-medium text-amber-500/80 dark:text-amber-400/60 tabular-nums select-none" title={`${streak}-day streak`}>
+                🔥 {streak}d streak
               </span>
             )}
           </div>
