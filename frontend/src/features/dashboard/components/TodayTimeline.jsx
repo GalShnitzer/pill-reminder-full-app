@@ -93,18 +93,16 @@ export default function TodayTimeline({ pills, onTake, onUntake }) {
                     {isLoading ? <SpinnerIcon /> : 'Undo'}
                   </button>
                 </div>
-              ) : (
+              ) : isPast ? (
                 <button
                   onClick={() => handleTake(entry)}
                   disabled={!!loadingKey}
-                  className={`text-xs px-2.5 py-1 rounded-lg shrink-0 transition-colors disabled:opacity-40 ${
-                    isPast
-                      ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
-                      : 'btn-primary'
-                  }`}
+                  className="text-xs px-2.5 py-1 rounded-lg shrink-0 transition-colors disabled:opacity-40 bg-red-500/20 text-red-300 hover:bg-red-500/30"
                 >
                   {isLoading ? <SpinnerIcon /> : 'Take'}
                 </button>
+              ) : (
+                <span className="text-xs text-gray-400 dark:text-slate-500 shrink-0">Upcoming</span>
               )}
             </div>
           );

@@ -128,14 +128,17 @@ function ColorPickerPopover({ currentColor, onSelect, onClose, triggerRef }) {
 
 /* ---------- helpers ---------- */
 
-// Returns the "current dose" — the next upcoming dose based on local time.
-// If all doses are in the past, returns the last one.
+// Returns the most actionable dose:
+// 1. Earliest overdue untaken dose (past its scheduled time, not yet logged)
+// 2. Next upcoming dose (hasn't arrived yet)
+// 3. Last dose as fallback
 function getCurrentDose(doses) {
   if (!doses || doses.length === 0) return null;
   const now = new Date();
   const currentTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  const upcoming = doses.find((d) => d.scheduledHour >= currentTime);
-  return upcoming || doses[doses.length - 1];
+  const overdue = doses.find((d) => d.scheduledHour <= currentTime && !d.taken);
+  if (overdue) return overdue;
+  return doses.find((d) => d.scheduledHour > currentTime) || doses[doses.length - 1];
 }
 
 /* ---------- component ---------- */
@@ -150,6 +153,9 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
   // Determine which dose to show on the card
   const currentDose = getCurrentDose(doses);
   const allTaken = takenToday;
+  const now = new Date();
+  const currentTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const isDoseFuture = currentDose && !currentDose.taken && currentDose.scheduledHour > currentTime;
 
   const handleColorChange = async (hex) => {
     setShowColorPicker(false);
@@ -317,9 +323,10 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
           </button>
         ) : (
           <button
-            className="btn-primary w-full flex items-center justify-center gap-2"
+            className={`w-full flex items-center justify-center gap-2 ${isDoseFuture ? 'btn-secondary opacity-60 cursor-not-allowed' : 'btn-primary'}`}
             onClick={handleTake}
-            disabled={loading}
+            disabled={loading || isDoseFuture}
+            title={isDoseFuture ? `Available at ${currentDose.scheduledHour}` : undefined}
             aria-label={`Mark ${name} as taken`}
           >
             {loading ? (
@@ -327,6 +334,8 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
                 <SpinnerIcon />
                 <span>Marking…</span>
               </>
+            ) : isDoseFuture ? (
+              `Due at ${currentDose.scheduledHour}`
             ) : (
               'Mark as Taken'
             )}
