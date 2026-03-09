@@ -189,11 +189,10 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
 
   return (
     <div
-      className={`relative glass-card p-5 flex flex-col gap-4 cursor-pointer
+      className="relative glass-card p-5 flex flex-col gap-4 cursor-pointer
                  border border-gray-200 dark:border-slate-700/50
                  hover:border-primary-500/50
-                 transition-all duration-200
-                 ${streak >= 2 ? 'border-l-[3px] border-l-amber-400/70 dark:border-l-amber-500/50' : ''}`}
+                 transition-all duration-200"
       onClick={onClick}
       role="button"
       tabIndex={0}
