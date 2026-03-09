@@ -145,7 +145,7 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorBtnRef = useRef(null);
 
-  const { name, doses = [], reminderHours = [], takenToday, color = '#6366f1' } = pill;
+  const { name, doses = [], reminderHours = [], takenToday, color = '#6366f1', streak = 0 } = pill;
 
   // Determine which dose to show on the card
   const currentDose = getCurrentDose(doses);
@@ -189,7 +189,7 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
 
   return (
     <div
-      className="glass-card p-5 flex flex-col gap-4 cursor-pointer
+      className="relative glass-card p-5 flex flex-col gap-4 cursor-pointer
                  border border-gray-200 dark:border-slate-700/50
                  hover:border-primary-500/50
                  transition-all duration-200"
@@ -199,6 +199,13 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
       aria-label={`View details for ${name}`}
     >
+      {/* Streak badge */}
+      {streak >= 2 && (
+        <div className="absolute -top-2.5 -right-2.5 flex items-center gap-1 bg-amber-500/15 border border-amber-500/40 text-amber-400 dark:text-amber-300 text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm shadow-amber-500/10 pointer-events-none select-none">
+          🔥 {streak}d
+        </div>
+      )}
+
       {/* Top: name + reminder hour badges */}
       <div className="flex flex-col gap-2">
         <div className="flex items-start justify-between gap-2">

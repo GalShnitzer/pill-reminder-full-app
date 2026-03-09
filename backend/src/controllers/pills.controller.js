@@ -25,28 +25,59 @@ const getPills = asyncHandler(async (req, res) => {
     return true;
   });
 
-  const logs = await PillLog.find({
+  // Build last-30-days date list for streak computation
+  const last30 = [];
+  for (let i = 0; i < 30; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    last30.push(d.toLocaleDateString('en-CA', { timeZone: tz }));
+  }
+  const thirtyDaysAgo = last30[last30.length - 1];
+
+  const pillIds = activePills.map((p) => p._id);
+
+  // Single query: today's logs + last 30 days logs
+  const allLogs = await PillLog.find({
     userId: req.userId,
-    date: today,
-    pillId: { $in: activePills.map((p) => p._id) },
+    date: { $gte: thirtyDaysAgo, $lte: today },
+    pillId: { $in: pillIds },
   }).lean();
 
-  // Map: "pillId:scheduledHour" -> { takenAt }
+  // Map: "pillId:scheduledHour" -> { takenAt }  (today only)
   const doseMap = {};
-  logs.forEach((log) => {
-    const key = `${log.pillId}:${log.scheduledHour}`;
-    doseMap[key] = { takenAt: log.takenAt };
+  // Map: pillId -> Set<date>  (any dose taken that day)
+  const takenDatesMap = {};
+  allLogs.forEach((log) => {
+    if (log.date === today) {
+      const key = `${log.pillId}:${log.scheduledHour}`;
+      doseMap[key] = { takenAt: log.takenAt };
+    }
+    const pid = String(log.pillId);
+    if (!takenDatesMap[pid]) takenDatesMap[pid] = new Set();
+    takenDatesMap[pid].add(log.date);
   });
 
-  const result = activePills.map((pill) => ({
-    ...pill,
-    doses: pill.reminderHours.map((h) => ({
-      scheduledHour: h,
-      taken: !!doseMap[`${pill._id}:${h}`],
-      takenAt: doseMap[`${pill._id}:${h}`]?.takenAt || null,
-    })),
-    takenToday: pill.reminderHours.every((h) => !!doseMap[`${pill._id}:${h}`]),
-  }));
+  const result = activePills.map((pill) => {
+    // Streak: consecutive days ending today with at least one dose logged
+    const pid = String(pill._id);
+    const taken = takenDatesMap[pid] || new Set();
+    let streak = 0;
+    for (const date of last30) {
+      if (taken.has(date)) streak++;
+      else break;
+    }
+
+    return {
+      ...pill,
+      doses: pill.reminderHours.map((h) => ({
+        scheduledHour: h,
+        taken: !!doseMap[`${pill._id}:${h}`],
+        takenAt: doseMap[`${pill._id}:${h}`]?.takenAt || null,
+      })),
+      takenToday: pill.reminderHours.every((h) => !!doseMap[`${pill._id}:${h}`]),
+      streak,
+    };
+  });
 
   res.json({ pills: result });
 });
