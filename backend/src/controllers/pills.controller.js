@@ -235,7 +235,7 @@ const getPillHistory = asyncHandler(async (req, res) => {
     calendar.push({
       date: dateStr,
       scheduled,
-      taken: scheduled && dayLogs.length > 0,
+      taken: scheduled && pill.reminderHours.every((h) => dayLogs.some((l) => l.scheduledHour === h)),
       doses: pill.reminderHours.map((h) => {
         const doseLog = dayLogs.find((l) => l.scheduledHour === h);
         return { scheduledHour: h, taken: !!doseLog, takenAt: doseLog?.takenAt || null };

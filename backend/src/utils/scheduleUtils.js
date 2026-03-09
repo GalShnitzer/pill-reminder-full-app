@@ -60,17 +60,31 @@ function getLastScheduledDateBefore(pill, dateStr) {
  * @returns {Promise<number>} streak count
  */
 async function computeStreak(pill, upToDate, PillLog) {
-  // Fetch all distinct taken dates for this pill in a 400-day window
   const windowStart = new Date(upToDate + 'T12:00:00');
   windowStart.setDate(windowStart.getDate() - 400);
   const windowStartStr = windowStart.toISOString().slice(0, 10);
 
-  const takenDates = await PillLog.find({
+  // Fetch all logs (need scheduledHour to verify every dose was taken)
+  const logs = await PillLog.find({
     pillId: pill._id,
     date: { $gte: windowStartStr, $lte: upToDate },
-  }).distinct('date');
+  }).select('date scheduledHour').lean();
 
-  const takenSet = new Set(takenDates);
+  // Build map: date -> Set of scheduledHours taken that day
+  const logMap = {};
+  logs.forEach((log) => {
+    if (!logMap[log.date]) logMap[log.date] = new Set();
+    logMap[log.date].add(log.scheduledHour);
+  });
+
+  const requiredHours = pill.reminderHours || [];
+
+  // Returns true only if every required dose was taken on that date
+  function allDosesTaken(date) {
+    const taken = logMap[date];
+    if (!taken) return false;
+    return requiredHours.every((h) => taken.has(h));
+  }
 
   // Walk backward from upToDate through scheduled days
   let streak = 0;
@@ -79,10 +93,17 @@ async function computeStreak(pill, upToDate, PillLog) {
   for (let i = 0; i < 400; i++) {
     const d = cursor.toISOString().slice(0, 10);
     if (isScheduledOnDate(pill, d)) {
-      if (takenSet.has(d)) {
-        streak++;
+      if (d === upToDate) {
+        // For today: only count if all doses done; if partial, skip (day not over yet)
+        if (allDosesTaken(d)) streak++;
+        // else: don't break — today is still in progress
       } else {
-        break; // missed a scheduled day
+        // Past day: all doses must be taken or streak breaks
+        if (allDosesTaken(d)) {
+          streak++;
+        } else {
+          break;
+        }
       }
     }
     cursor.setDate(cursor.getDate() - 1);
