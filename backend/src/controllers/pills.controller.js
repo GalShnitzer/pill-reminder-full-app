@@ -42,6 +42,19 @@ const getPills = asyncHandler(async (req, res) => {
     doseMap[key] = { takenAt: log.takenAt };
   });
 
+  // Lazy migration: compute + cache streak for pills that have never had it calculated
+  const needsMigration = activePills.filter((p) => !p.streakAnchorDate);
+  if (needsMigration.length > 0) {
+    await Promise.all(
+      needsMigration.map(async (pill) => {
+        const streak = await computeStreak(pill, today, PillLog);
+        pill.streak = streak;
+        pill.streakAnchorDate = today;
+        Pill.findByIdAndUpdate(pill._id, { streak, streakAnchorDate: today }).catch(() => {});
+      })
+    );
+  }
+
   const result = activePills.map((pill) => {
     // Streak validity check — pure date math, zero extra DB queries
     const lastScheduled = getLastScheduledDateBefore(pill, today);
