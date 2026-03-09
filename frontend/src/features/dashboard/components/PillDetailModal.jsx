@@ -125,7 +125,7 @@ function MiniHeatmap({ logMap, pillCreatedDate }) {
           const entry = logMap[date];
           const scheduled = entry?.scheduled !== false; // default true for backward compat
           const taken = entry?.taken;
-          let colorClass = 'bg-gray-200/70 dark:bg-slate-700/40'; // not scheduled
+          let colorClass = 'bg-gray-300/80 dark:bg-slate-600/50'; // not scheduled
           let titleText = `${date}: Not scheduled`;
           if (scheduled && taken) {
             colorClass = 'bg-indigo-500';
@@ -151,7 +151,7 @@ function MiniHeatmap({ logMap, pillCreatedDate }) {
           <span className="inline-block w-3 h-3 rounded-sm bg-red-400/60 dark:bg-red-500/40" /> Missed
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-sm bg-gray-200/70 dark:bg-slate-700/40" /> Not scheduled
+          <span className="inline-block w-3 h-3 rounded-sm bg-gray-300/80 dark:bg-slate-600/50" /> Not scheduled
         </span>
       </div>
     </div>
