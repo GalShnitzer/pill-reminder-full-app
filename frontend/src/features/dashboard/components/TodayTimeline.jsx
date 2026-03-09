@@ -10,6 +10,13 @@ function SpinnerIcon() {
   );
 }
 
+// Returns true if the current time is within 30 min before (or any time after) the scheduled hour
+function isDoseAvailable(scheduledHour, currentTime) {
+  const [sh, sm] = scheduledHour.split(':').map(Number);
+  const [ch, cm] = currentTime.split(':').map(Number);
+  return ch * 60 + cm >= sh * 60 + sm - 30;
+}
+
 export default function TodayTimeline({ pills, onTake, onUntake }) {
   const [loadingKey, setLoadingKey] = useState(null); // "pillId:scheduledHour"
 
@@ -57,6 +64,7 @@ export default function TodayTimeline({ pills, onTake, onUntake }) {
       <div className="space-y-3">
         {entries.map((entry) => {
           const isPast = entry.scheduledHour < currentTime;
+          const isAvailable = isDoseAvailable(entry.scheduledHour, currentTime);
           const isLoading = loadingKey === entry.key;
 
           return (
@@ -93,11 +101,13 @@ export default function TodayTimeline({ pills, onTake, onUntake }) {
                     {isLoading ? <SpinnerIcon /> : 'Undo'}
                   </button>
                 </div>
-              ) : isPast ? (
+              ) : isAvailable ? (
                 <button
                   onClick={() => handleTake(entry)}
                   disabled={!!loadingKey}
-                  className="text-xs px-2.5 py-1 rounded-lg shrink-0 transition-colors disabled:opacity-40 bg-red-500/20 text-red-300 hover:bg-red-500/30"
+                  className={`text-xs px-2.5 py-1 rounded-lg shrink-0 transition-colors disabled:opacity-40 ${
+                    isPast ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' : 'btn-primary'
+                  }`}
                 >
                   {isLoading ? <SpinnerIcon /> : 'Take'}
                 </button>

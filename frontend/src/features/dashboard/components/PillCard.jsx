@@ -155,7 +155,11 @@ export default function PillCard({ pill, onTake, onUntake, onClick, onUpdate }) 
   const allTaken = takenToday;
   const now = new Date();
   const currentTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  const isDoseFuture = currentDose && !currentDose.taken && currentDose.scheduledHour > currentTime;
+  const isDoseFuture = currentDose && !currentDose.taken && (() => {
+    const [sh, sm] = currentDose.scheduledHour.split(':').map(Number);
+    const [ch, cm] = currentTime.split(':').map(Number);
+    return ch * 60 + cm < sh * 60 + sm - 30; // more than 30 min away
+  })();
 
   const handleColorChange = async (hex) => {
     setShowColorPicker(false);
