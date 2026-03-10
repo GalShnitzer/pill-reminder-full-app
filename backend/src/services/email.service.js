@@ -56,7 +56,7 @@ async function sendPillReminder({ user, pill }) {
         </div>
       `,
     });
-    console.log(`[Email] Sent reminder to ${user.email} for pill "${pill.name}"`);
+    console.log(`[Email] Sent reminder for pill ${pill._id}`);
     return { success: true, id: result.id };
   } catch (err) {
     console.error(`[Email] Failed to send to ${user.email}:`, err.message);

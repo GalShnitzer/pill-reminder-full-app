@@ -24,7 +24,7 @@ async function checkAndSendReminders() {
       try {
         const user = await User.findById(pill.userId).lean();
         if (!user) {
-          console.log(`[Scheduler] "${pill.name}": no user found — skipping`);
+          console.log(`[Scheduler] pill ${pill._id}: no user found — skipping`);
           continue;
         }
 
@@ -33,17 +33,17 @@ async function checkAndSendReminders() {
 
         // Skip if pill hasn't started yet or has already ended
         if (pill.startDate && today < pill.startDate) {
-          console.log(`[Scheduler] "${pill.name}": before start date (${pill.startDate}) — skipping`);
+          console.log(`[Scheduler] pill ${pill._id}: before start date — skipping`);
           continue;
         }
         if (pill.endDate && today > pill.endDate) {
-          console.log(`[Scheduler] "${pill.name}": past end date (${pill.endDate}) — skipping`);
+          console.log(`[Scheduler] pill ${pill._id}: past end date — skipping`);
           continue;
         }
 
         // Skip if this pill isn't scheduled for today
         if (!isScheduledOnDate(pill, today)) {
-          console.log(`[Scheduler] "${pill.name}": not scheduled today (${pill.scheduleType}) — skipping`);
+          console.log(`[Scheduler] pill ${pill._id}: not scheduled today (${pill.scheduleType}) — skipping`);
           continue;
         }
 
@@ -60,7 +60,7 @@ async function checkAndSendReminders() {
         const endMinutes = endH * 60 + endM;
 
         if (currentTotalMinutes < startMinutes || currentTotalMinutes > endMinutes) {
-          console.log(`[Scheduler] "${pill.name}": outside email window (${emailStart}–${emailEnd}, now=${localTime}) — skipping`);
+          console.log(`[Scheduler] pill ${pill._id}: outside email window — skipping`);
           continue;
         }
 
@@ -81,14 +81,14 @@ async function checkAndSendReminders() {
             minutesSinceDose >= 15 &&
             minutesSinceDose % pill.emailFrequencyMinutes < 15;
 
-          console.log(`[Scheduler] "${pill.name}" dose ${h}: offset=${minutesSinceDose}min inWindow=${inWindow} isFollowUp=${isFollowUp}`);
+          console.log(`[Scheduler] pill ${pill._id} dose ${h}: offset=${minutesSinceDose}min inWindow=${inWindow} isFollowUp=${isFollowUp}`);
 
           if (!inWindow && !isFollowUp) continue;
 
           // Check if this specific dose was already taken today
           const doseTaken = await PillLog.findOne({ pillId: pill._id, date: today, scheduledHour: h }).lean();
           if (doseTaken) {
-            console.log(`[Scheduler] "${pill.name}" dose ${h}: already taken — skipping`);
+            console.log(`[Scheduler] pill ${pill._id} dose ${h}: already taken — skipping`);
             continue;
           }
 
@@ -98,10 +98,10 @@ async function checkAndSendReminders() {
         }
 
         if (!sentForPill) {
-          console.log(`[Scheduler] "${pill.name}": no reminder sent this tick`);
+          console.log(`[Scheduler] pill ${pill._id}: no reminder sent this tick`);
         }
       } catch (err) {
-        console.error(`[Scheduler] Error processing pill "${pill.name}" (${pill._id}):`, err.message);
+        console.error(`[Scheduler] Error processing pill ${pill._id}:`, err.message);
       }
     }
   } catch (err) {
