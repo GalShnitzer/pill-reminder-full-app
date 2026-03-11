@@ -412,7 +412,6 @@ export default function LandingPage() {
   const [step, setStep] = useState('main');
   const [pendingUser, setPendingUser] = useState(null);
   const [phone, setPhone] = useState('');
-  const heroRef = useRef(null);
 
   /* Inject distinctive heading font */
   useEffect(() => {
@@ -457,10 +456,6 @@ export default function LandingPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGetStarted = () => {
-    heroRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -581,20 +576,12 @@ export default function LandingPage() {
             </div>
             <span className="lh font-bold text-gray-900 dark:text-white text-lg">PillReminder</span>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-xs text-gray-400 dark:text-slate-500 font-medium">Sign in with Google</span>
-            <button
-              onClick={handleGetStarted}
-              className="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-semibold py-2 px-5 rounded-xl transition-colors shadow-md shadow-indigo-600/20"
-            >
-              Get started
-            </button>
-          </div>
+          <GoogleSignInButton loading={loading} onCredential={handleCredential} width={200} />
         </div>
       </header>
 
       {/* ── Hero ── */}
-      <section ref={heroRef} className="relative overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col justify-center">
+      <section className="relative overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col justify-center">
         {/* Background orbs */}
         <div className="orb w-[700px] h-[500px] top-[-100px] left-[-100px] bg-indigo-600/10 dark:bg-indigo-500/[0.22]" />
         <div className="orb w-[400px] h-[400px] bottom-0 right-0 bg-violet-600/8 dark:bg-violet-500/[0.14]" />
