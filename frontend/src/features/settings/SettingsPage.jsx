@@ -6,6 +6,13 @@ import PhoneInput from '../../components/ui/PhoneInput';
 import toast from 'react-hot-toast';
 import { getApiError } from '../../utils/helpers';
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
   const [showGuide, setShowGuide] = useState(false);
@@ -46,7 +53,7 @@ export default function SettingsPage() {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: vapidKey,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
       const subJson = sub.toJSON();
       await subscribePush({
