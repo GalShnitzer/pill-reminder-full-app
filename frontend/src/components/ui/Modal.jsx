@@ -28,15 +28,13 @@ export default function Modal({
   useEffect(() => {
     if (!isOpen) return;
     document.addEventListener('keydown', handleKeyDown);
-    // Prevent body scroll while modal is open (also lock html for iOS Safari)
-    const prevBody = document.body.style.overflow;
-    const prevHtml = document.documentElement.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
+    // Prevent body scroll while modal is open
+    // Use overflow-y only (not overflow) to avoid breaking fixed layout on mobile
+    const prevBody = document.body.style.overflowY;
+    document.body.style.overflowY = 'hidden';
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = prevBody;
-      document.documentElement.style.overflow = prevHtml;
+      document.body.style.overflowY = prevBody;
     };
   }, [isOpen, handleKeyDown]);
 
