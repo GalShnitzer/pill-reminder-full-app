@@ -182,7 +182,7 @@ function ChartTooltip({ active, payload, label }) {
 // Main component
 // ---------------------------------------------------------------------------
 
-export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
+export default function PillDetailModal({ pill, isOpen, onClose, onDelete, onEdit }) {
   const [data, setData] = useState(null);   // { pill, logs }
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
@@ -317,12 +317,20 @@ export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
           </h2>
 
           {!confirmDelete ? (
-            <button
-              className="btn-danger py-1.5 px-3 text-sm"
-              onClick={() => setConfirmDelete(true)}
-            >
-              Delete Pill
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                className="btn-secondary py-1.5 px-3 text-sm"
+                onClick={() => onEdit(pill)}
+              >
+                Edit Pill
+              </button>
+              <button
+                className="btn-danger py-1.5 px-3 text-sm"
+                onClick={() => setConfirmDelete(true)}
+              >
+                Delete
+              </button>
+            </div>
           ) : (
             <div className="flex items-center gap-2 bg-red-50 border border-red-200 dark:bg-red-950/60 dark:border-red-700/50 rounded-xl px-3 py-1.5">
               <span className="text-sm text-red-600 dark:text-red-300">Are you sure?</span>

@@ -49,6 +49,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
 
   const [selectedPill, setSelectedPill] = useState(null);
+  const [pillToEdit, setPillToEdit] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
   const handleTake = async (pill, scheduledHour) => {
@@ -162,12 +163,14 @@ export default function DashboardPage() {
         isOpen={!!selectedPill}
         onClose={() => setSelectedPill(null)}
         onDelete={handleDelete}
+        onEdit={(pill) => { setSelectedPill(null); setPillToEdit(pill); }}
       />
 
       <AddPillModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onCreated={refetch}
+        isOpen={showAddModal || !!pillToEdit}
+        onClose={() => { setShowAddModal(false); setPillToEdit(null); }}
+        onCreated={() => { refetch(); setPillToEdit(null); }}
+        existingPill={pillToEdit}
       />
     </div>
   );
