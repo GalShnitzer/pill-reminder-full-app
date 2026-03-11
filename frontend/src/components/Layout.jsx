@@ -166,7 +166,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-slate-950 flex flex-col">
+    <div className="h-screen bg-gray-100 dark:bg-slate-950 flex flex-col overflow-hidden">
 
       {/* ── Top Navbar ─────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-gray-200/80 dark:border-slate-800/60">
