@@ -94,7 +94,7 @@ async function checkAndSendReminders() {
           }
 
           await sendPillReminder({ user, pill });
-          if (inWindow) {
+          if (inWindow || isFollowUp) {
             await sendPushNotification({ user, pill, scheduledHour: h });
           }
           sentForPill = true;
