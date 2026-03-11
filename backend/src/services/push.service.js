@@ -13,7 +13,11 @@ if (vapidPublicKey && vapidPrivateKey && vapidSubject) {
 }
 
 async function sendPushNotification({ user, pill, scheduledHour }) {
-  if (!user.pushSubscriptions?.length) return;
+  if (!user.pushSubscriptions?.length) {
+    console.log(`[Push] user ${user._id}: no subscriptions — skipping`);
+    return;
+  }
+  console.log(`[Push] user ${user._id}: sending to ${user.pushSubscriptions.length} subscription(s)`);
 
   const payload = JSON.stringify({
     title: '💊 Pill Reminder',
