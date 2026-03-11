@@ -14,3 +14,12 @@ export const deleteResendKey = () =>
 
 export const sendTestEmail = () =>
   api.post('/users/test-email').then((r) => r.data);
+
+export const getVapidKey = () =>
+  api.get('/users/vapid-public-key').then((r) => r.data.publicKey);
+
+export const subscribePush = (sub) =>
+  api.post('/users/push-subscription', sub).then((r) => r.data);
+
+export const unsubscribePush = (endpoint) =>
+  api.delete('/users/push-subscription', { data: { endpoint } }).then((r) => r.data);

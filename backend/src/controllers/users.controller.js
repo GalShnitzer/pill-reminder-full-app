@@ -71,4 +71,31 @@ const sendTestEmail = asyncHandler(async (req, res) => {
   res.json({ message: 'Test email sent successfully' });
 });
 
-module.exports = { getProfile, updateProfile, saveResendKey, deleteResendKey, sendTestEmail };
+// GET /api/users/vapid-public-key
+const getVapidPublicKey = asyncHandler(async (req, res) => {
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
+// POST /api/users/push-subscription
+const subscribePush = asyncHandler(async (req, res) => {
+  const { endpoint, p256dh, auth } = req.body;
+  // Remove any existing entry for this endpoint before adding (handles re-subscription)
+  await User.findByIdAndUpdate(req.userId, {
+    $pull: { pushSubscriptions: { endpoint } },
+  });
+  await User.findByIdAndUpdate(req.userId, {
+    $push: { pushSubscriptions: { endpoint, p256dh, auth } },
+  });
+  res.json({ message: 'Subscribed to push notifications' });
+});
+
+// DELETE /api/users/push-subscription
+const unsubscribePush = asyncHandler(async (req, res) => {
+  const { endpoint } = req.body;
+  await User.findByIdAndUpdate(req.userId, {
+    $pull: { pushSubscriptions: { endpoint } },
+  });
+  res.json({ message: 'Unsubscribed from push notifications' });
+});
+
+module.exports = { getProfile, updateProfile, saveResendKey, deleteResendKey, sendTestEmail, getVapidPublicKey, subscribePush, unsubscribePush };

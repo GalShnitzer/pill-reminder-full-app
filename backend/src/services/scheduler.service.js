@@ -3,6 +3,7 @@ const Pill = require('../models/Pill');
 const PillLog = require('../models/PillLog');
 const User = require('../models/User');
 const { sendPillReminder } = require('./email.service');
+const { sendPushNotification } = require('./push.service');
 const { isScheduledOnDate } = require('../utils/scheduleUtils');
 
 // Runs every 15 minutes
@@ -93,6 +94,9 @@ async function checkAndSendReminders() {
           }
 
           await sendPillReminder({ user, pill });
+          if (inWindow) {
+            await sendPushNotification({ user, pill, scheduledHour: h });
+          }
           sentForPill = true;
           break; // send at most one reminder per cron tick per pill
         }

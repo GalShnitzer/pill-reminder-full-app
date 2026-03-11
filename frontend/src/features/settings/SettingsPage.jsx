@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { saveResendKey, deleteResendKey, updateProfile, sendTestEmail } from '../../services/user.service';
+import { saveResendKey, deleteResendKey, updateProfile, sendTestEmail, getVapidKey, subscribePush, unsubscribePush } from '../../services/user.service';
 import Modal from '../../components/ui/Modal';
 import PhoneInput from '../../components/ui/PhoneInput';
 import toast from 'react-hot-toast';
@@ -17,6 +17,69 @@ export default function SettingsPage() {
   const [phone, setPhone] = useState(user?.phone || '');
   const [savingProfile, setSavingProfile] = useState(false);
   const [showReplaceForm, setShowReplaceForm] = useState(false);
+
+  // Push notifications state
+  const pushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushPermission, setPushPermission] = useState(typeof Notification !== 'undefined' ? Notification.permission : 'default');
+  const [togglingPush, setTogglingPush] = useState(false);
+
+  useEffect(() => {
+    if (!pushSupported) return;
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.pushManager.getSubscription().then((sub) => {
+        setPushSubscribed(!!sub);
+      });
+    });
+  }, [pushSupported]);
+
+  const handleEnablePush = async () => {
+    setTogglingPush(true);
+    try {
+      const permission = await Notification.requestPermission();
+      setPushPermission(permission);
+      if (permission !== 'granted') {
+        toast.error('Permission denied. Enable notifications in your browser settings.');
+        return;
+      }
+      const vapidKey = await getVapidKey();
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: vapidKey,
+      });
+      const subJson = sub.toJSON();
+      await subscribePush({
+        endpoint: subJson.endpoint,
+        p256dh: subJson.keys.p256dh,
+        auth: subJson.keys.auth,
+      });
+      setPushSubscribed(true);
+      toast.success('Push notifications enabled!');
+    } catch (err) {
+      toast.error(getApiError(err) || 'Failed to enable notifications');
+    } finally {
+      setTogglingPush(false);
+    }
+  };
+
+  const handleDisablePush = async () => {
+    setTogglingPush(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await unsubscribePush(sub.endpoint);
+        await sub.unsubscribe();
+      }
+      setPushSubscribed(false);
+      toast.success('Push notifications disabled');
+    } catch (err) {
+      toast.error(getApiError(err) || 'Failed to disable notifications');
+    } finally {
+      setTogglingPush(false);
+    }
+  };
 
   const handleSaveKey = async (e) => {
     e.preventDefault();
@@ -79,7 +142,7 @@ export default function SettingsPage() {
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="text-gray-500 dark:text-slate-400 mt-1">Manage your account and email reminders</p>
+        <p className="text-gray-500 dark:text-slate-400 mt-1">Manage your account, reminders, and notifications</p>
       </div>
 
       {/* Profile card */}
@@ -184,6 +247,52 @@ export default function SettingsPage() {
               {savingKey ? 'Saving...' : 'Save API key'}
             </button>
           </form>
+        )}
+      </section>
+
+      {/* Push notifications card */}
+      <section className="glass-card p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+          <span>🔔</span> Push notifications
+        </h2>
+        <p className="text-gray-500 dark:text-slate-400 text-sm mb-4">
+          Get a notification on this device when it's time to take a pill — even when the app isn't open.
+        </p>
+
+        {!pushSupported ? (
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-100 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
+            <span className="text-gray-400">🚫</span>
+            <span className="text-gray-500 dark:text-slate-400 text-sm">
+              Push notifications are not supported in this browser.
+            </span>
+          </div>
+        ) : pushPermission === 'denied' ? (
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+            <span className="text-red-400">🔕</span>
+            <span className="text-red-400 text-sm">
+              Notifications are blocked. Go to your browser settings and allow notifications for this site, then reload.
+            </span>
+          </div>
+        ) : pushSubscribed ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/30">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-green-400 text-sm font-medium">Push notifications enabled on this device</span>
+            </div>
+            <button onClick={handleDisablePush} disabled={togglingPush} className="btn-secondary text-sm">
+              {togglingPush ? 'Disabling...' : 'Disable notifications'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+              <span className="text-amber-400">🔕</span>
+              <span className="text-amber-300 text-sm">Not enabled — you won't receive push notifications</span>
+            </div>
+            <button onClick={handleEnablePush} disabled={togglingPush} className="btn-primary text-sm">
+              {togglingPush ? 'Enabling...' : 'Enable notifications'}
+            </button>
+          </div>
         )}
       </section>
 
