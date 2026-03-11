@@ -26,14 +26,24 @@ async function sendPushNotification({ user, pill, scheduledHour }) {
   });
 
   const results = await Promise.allSettled(
-    user.pushSubscriptions.map((sub) => webpush.sendNotification(sub, payload))
+    user.pushSubscriptions.map((sub) =>
+      webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        payload
+      )
+    )
   );
 
   // Remove subscriptions that the browser reported as expired/invalid (410 Gone)
   const expiredEndpoints = [];
   results.forEach((r, i) => {
-    if (r.status === 'rejected' && r.reason?.statusCode === 410) {
-      expiredEndpoints.push(user.pushSubscriptions[i].endpoint);
+    if (r.status === 'rejected') {
+      console.error(`[Push] subscription ${i} failed:`, r.reason?.statusCode, r.reason?.message);
+      if (r.reason?.statusCode === 410) {
+        expiredEndpoints.push(user.pushSubscriptions[i].endpoint);
+      }
+    } else {
+      console.log(`[Push] subscription ${i} delivered (${r.value?.statusCode})`);
     }
   });
   if (expiredEndpoints.length > 0) {
