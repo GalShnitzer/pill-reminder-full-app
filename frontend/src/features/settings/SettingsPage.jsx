@@ -16,6 +16,7 @@ function urlBase64ToUint8Array(base64String) {
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
   const [showGuide, setShowGuide] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [savingKey, setSavingKey] = useState(false);
@@ -259,12 +260,22 @@ export default function SettingsPage() {
 
       {/* Push notifications card */}
       <section className="glass-card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-          <span>🔔</span> Push notifications
-        </h2>
-        <p className="text-gray-500 dark:text-slate-400 text-sm mb-4">
-          Get a notification on this device when it's time to take a pill — even when the app isn't open.
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <span>🔔</span> Push notifications
+            </h2>
+            <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">
+              Get a notification on this device when it's time to take a pill — even when the app isn't open.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowInstallGuide(true)}
+            className="text-primary-400 hover:text-primary-300 text-sm underline underline-offset-2 transition-colors whitespace-nowrap sm:ml-4 self-start"
+          >
+            How to install the app?
+          </button>
+        </div>
 
         {!pushSupported ? (
           <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-100 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
@@ -302,6 +313,75 @@ export default function SettingsPage() {
           </div>
         )}
       </section>
+
+      {/* Install Guide Modal */}
+      <Modal isOpen={showInstallGuide} onClose={() => setShowInstallGuide(false)} title="How to install the app" size="lg">
+        <div className="space-y-6 text-sm text-gray-700 dark:text-slate-300">
+          <p className="text-gray-500 dark:text-slate-400">
+            Install PillReminder on your phone's home screen for the best experience and to receive push notifications.
+          </p>
+
+          {/* iOS */}
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <span>🍎</span> iPhone / iPad (Safari)
+            </h3>
+            <div className="space-y-3">
+              {[
+                { step: 1, title: 'Open in Safari', desc: 'Make sure you\'re using Safari — Chrome and other browsers don\'t support installation on iOS.' },
+                { step: 2, title: 'Tap the Share button', desc: 'Tap the Share icon at the bottom of the screen (a square with an arrow pointing up).' },
+                { step: 3, title: 'Tap "Add to Home Screen"', desc: 'Scroll down in the share sheet and tap "Add to Home Screen".' },
+                { step: 4, title: 'Confirm the name and tap "Add"', desc: 'You can keep the name "PillReminder" or change it, then tap "Add" in the top right.' },
+                { step: 5, title: 'Open from home screen', desc: 'The app icon now appears on your home screen. Tap it to open the app in full-screen mode.' },
+              ].map(({ step, title, desc }) => (
+                <div key={step} className="flex gap-4">
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-600/30 border border-primary-500/40 flex items-center justify-center text-primary-600 dark:text-primary-300 font-bold text-xs">
+                    {step}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">{title}</p>
+                    <p className="text-gray-500 dark:text-slate-400 mt-0.5">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t border-gray-200 dark:border-slate-700" />
+
+          {/* Android */}
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <span>🤖</span> Android (Chrome)
+            </h3>
+            <div className="space-y-3">
+              {[
+                { step: 1, title: 'Open in Chrome', desc: 'Make sure you\'re using Chrome for the best experience on Android.' },
+                { step: 2, title: 'Tap the three-dot menu', desc: 'Tap the ⋮ menu icon in the top-right corner of Chrome.' },
+                { step: 3, title: 'Tap "Add to Home screen" or "Install app"', desc: 'You may see either option depending on your Android version. Tap it.' },
+                { step: 4, title: 'Confirm installation', desc: 'Tap "Add" or "Install" in the prompt that appears.' },
+                { step: 5, title: 'Open from home screen', desc: 'The PillReminder icon appears on your home screen. Tap it to open the app.' },
+              ].map(({ step, title, desc }) => (
+                <div key={step} className="flex gap-4">
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-600/30 border border-primary-500/40 flex items-center justify-center text-primary-600 dark:text-primary-300 font-bold text-xs">
+                    {step}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">{title}</p>
+                    <p className="text-gray-500 dark:text-slate-400 mt-0.5">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-gray-200 dark:border-slate-700 flex justify-end">
+            <button onClick={() => setShowInstallGuide(false)} className="btn-primary">
+              Got it, close
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Resend Guide Modal */}
       <Modal isOpen={showGuide} onClose={() => setShowGuide(false)} title="How to get a Resend API key" size="lg">
