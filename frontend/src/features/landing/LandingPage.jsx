@@ -460,11 +460,7 @@ export default function LandingPage() {
   };
 
   const handleGetStarted = () => {
-    if (window.google?.accounts?.id) {
-      window.google.accounts.id.prompt();
-    } else {
-      heroRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
+    heroRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
