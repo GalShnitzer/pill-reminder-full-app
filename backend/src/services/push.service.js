@@ -1,11 +1,16 @@
 const webpush = require('web-push');
 const User = require('../models/User');
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT,
-  process.env.VAPID_PUBLIC_KEY?.replace(/=/g, ''),
-  process.env.VAPID_PRIVATE_KEY?.replace(/=/g, '')
-);
+const cleanKey = (k) => k?.replace(/[\s=]/g, '') || null;
+const vapidPublicKey = cleanKey(process.env.VAPID_PUBLIC_KEY);
+const vapidPrivateKey = cleanKey(process.env.VAPID_PRIVATE_KEY);
+const vapidSubject = process.env.VAPID_SUBJECT?.trim() || null;
+
+if (vapidPublicKey && vapidPrivateKey && vapidSubject) {
+  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+} else {
+  console.warn('[push] VAPID keys not configured — push notifications disabled');
+}
 
 async function sendPushNotification({ user, pill, scheduledHour }) {
   if (!user.pushSubscriptions?.length) return;
