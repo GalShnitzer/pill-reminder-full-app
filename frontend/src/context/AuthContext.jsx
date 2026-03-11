@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { getMe, signOut as apiSignOut } from '../services/auth.service';
+import { unsubscribePush } from '../services/user.service';
 
 const AuthContext = createContext(null);
 
@@ -17,6 +18,20 @@ export function AuthProvider({ children }) {
   const login = (userData) => setUser(userData);
 
   const logout = async () => {
+    // Unsubscribe push on this device before signing out so the subscription
+    // is not shared with the next account that logs in on this device.
+    try {
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await unsubscribePush(sub.endpoint).catch(() => {});
+          await sub.unsubscribe();
+        }
+      }
+    } catch {
+      // best-effort — don't block logout
+    }
     try {
       await apiSignOut();
     } catch {
