@@ -576,7 +576,14 @@ export default function LandingPage() {
             </div>
             <span className="lh font-bold text-gray-900 dark:text-white text-lg">PillReminder</span>
           </div>
-          <GoogleSignInButton loading={loading} onCredential={handleCredential} width={200} />
+          <div className="relative group">
+            <div className="bg-indigo-600 group-hover:bg-indigo-500 text-white text-sm font-semibold py-2 px-5 rounded-xl transition-colors shadow-md shadow-indigo-600/20 pointer-events-none select-none">
+              Get started
+            </div>
+            <div className="absolute inset-0 opacity-0 overflow-hidden rounded-xl">
+              <GoogleSignInButton loading={loading} onCredential={handleCredential} width={130} />
+            </div>
+          </div>
         </div>
       </header>
 
