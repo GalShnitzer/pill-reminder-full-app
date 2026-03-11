@@ -28,12 +28,15 @@ export default function Modal({
   useEffect(() => {
     if (!isOpen) return;
     document.addEventListener('keydown', handleKeyDown);
-    // Prevent body scroll while modal is open
-    const prev = document.body.style.overflow;
+    // Prevent body scroll while modal is open (also lock html for iOS Safari)
+    const prevBody = document.body.style.overflow;
+    const prevHtml = document.documentElement.style.overflow;
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevBody;
+      document.documentElement.style.overflow = prevHtml;
     };
   }, [isOpen, handleKeyDown]);
 
@@ -93,7 +96,7 @@ export default function Modal({
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5">
+        <div className="overflow-y-auto overscroll-contain flex-1 px-6 py-5">
           {children}
         </div>
       </div>

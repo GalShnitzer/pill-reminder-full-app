@@ -185,31 +185,34 @@ function ChartTooltip({ active, payload, label }) {
 export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
   const [data, setData] = useState(null);   // { pill, logs }
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Fetch history whenever the modal opens
-  useEffect(() => {
-    if (!isOpen || !pill?._id) return;
-
+  const loadHistory = (pillId) => {
     let cancelled = false;
     setData(null);
+    setFetchError(false);
     setConfirmDelete(false);
     setLoading(true);
 
-    getPillHistory(pill._id)
+    getPillHistory(pillId)
       .then((res) => {
         if (!cancelled) setData(res);
       })
-      .catch((err) => {
-        if (!cancelled) toast.error(getApiError(err));
+      .catch(() => {
+        if (!cancelled) setFetchError(true);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
+  };
+
+  // Fetch history whenever the modal opens
+  useEffect(() => {
+    if (!isOpen || !pill?._id) return;
+    return loadHistory(pill._id);
   }, [isOpen, pill?._id]);
 
   if (!pill) return null;
@@ -339,8 +342,21 @@ export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
           )}
         </div>
 
+        {/* ---- Fetch error ---- */}
+        {fetchError && (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <p className="text-sm text-gray-500 dark:text-slate-400">Failed to load pill details.</p>
+            <button
+              className="btn-secondary text-sm py-1.5 px-4"
+              onClick={() => loadHistory(pill._id)}
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
         {/* ---- Stats row ---- */}
-        {loading ? (
+        {!fetchError && (loading ? (
           <SkeletonStats />
         ) : (
           <div className="grid grid-cols-3 gap-3">
@@ -360,7 +376,9 @@ export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
               sub={`${takenCount30} / ${totalDays} days`}
             />
           </div>
-        )}
+        ))}
+
+        {!fetchError && <>
 
         {/* ---- Chart 1 — Time Distribution ---- */}
         <div>
@@ -530,6 +548,8 @@ export default function PillDetailModal({ pill, isOpen, onClose, onDelete }) {
             </div>
           )}
         </div>
+
+        </>}
       </div>
     </Modal>
   );
