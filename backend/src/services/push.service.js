@@ -3,8 +3,8 @@ const User = require('../models/User');
 
 webpush.setVapidDetails(
   process.env.VAPID_SUBJECT,
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
+  process.env.VAPID_PUBLIC_KEY?.replace(/=/g, ''),
+  process.env.VAPID_PRIVATE_KEY?.replace(/=/g, '')
 );
 
 async function sendPushNotification({ user, pill, scheduledHour }) {
