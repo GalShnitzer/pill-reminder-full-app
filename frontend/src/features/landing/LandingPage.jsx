@@ -576,14 +576,15 @@ export default function LandingPage() {
             </div>
             <span className="lh font-bold text-gray-900 dark:text-white text-lg">PillReminder</span>
           </div>
-          <div className="relative group" style={{ width: 130, height: 40 }}>
-            {/* Google button sits behind — visible to browser so it stays active, receives clicks */}
-            <div className="absolute inset-0 overflow-hidden">
+          <div className="relative group rounded-xl shadow-md shadow-indigo-600/20" style={{ width: 130, height: 40 }}>
+            {/* Clip both layers to the rounded shape */}
+            <div className="absolute inset-0 rounded-xl overflow-hidden">
+              {/* Google button behind — visible so browser keeps it active, receives clicks */}
               <GoogleSignInButton loading={loading} onCredential={handleCredential} width={130} />
-            </div>
-            {/* Custom "Get started" label on top — pointer-events:none so clicks fall through */}
-            <div className="absolute inset-0 bg-indigo-600 group-hover:bg-indigo-500 text-white text-sm font-semibold flex items-center justify-center rounded-xl transition-colors shadow-md shadow-indigo-600/20 pointer-events-none select-none">
-              Get started
+              {/* Custom label on top — pointer-events:none so clicks fall through */}
+              <div className="absolute inset-0 bg-indigo-600 group-hover:bg-indigo-500 text-white text-sm font-semibold flex items-center justify-center transition-colors pointer-events-none select-none">
+                Get started
+              </div>
             </div>
           </div>
         </div>
