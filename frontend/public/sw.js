@@ -3,9 +3,7 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || 'Pill Reminder', {
       body: data.body || "Time to take your pill",
-      icon: '/pill.svg',
-      badge: '/pill.svg',
-      data: { url: data.url || '/' },
+data: { url: data.url || '/' },
     })
   );
 });
