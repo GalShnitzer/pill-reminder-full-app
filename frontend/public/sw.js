@@ -8,7 +8,7 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title || 'Pill Reminder', {
       body: data.body || "Time to take your pill",
       icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      badge: '/badge.svg',
       data: { url: data.url || '/' },
     })
   );
